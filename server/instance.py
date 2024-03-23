@@ -30,6 +30,8 @@ class ServerInstance(Callbacks):
         super().__init__()
 
     def __monitor_server(self):
+        self.call("on_server_start")
+
         if not self.__process:
             return
 
@@ -93,6 +95,8 @@ class ServerInstance(Callbacks):
 
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
+
+        self.call("on_request_send", request)
 
     def stop(self):
         if not self.__process:
