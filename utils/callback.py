@@ -27,7 +27,9 @@ class Callbacks(ABC):
     def __init__(self):
         self._callbacks = []
 
-    def register(self, name: str, callback: callable):
+        super().__init__()
+
+    def register_callback(self, name: str, callback: callable):
         callback = Callback(name, callback)
         self._callbacks.append(callback)
 
