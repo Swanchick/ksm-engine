@@ -36,8 +36,6 @@ def enter():
     a = command_entry.get()
     server.send(a)
 
-    print("End 2")
-
 
 server = ServerInstance("Test", "python", ["script.py"])
 server.register_callback("on_callback_get", on_callback)

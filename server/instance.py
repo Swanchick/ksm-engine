@@ -91,12 +91,8 @@ class ServerInstance(Callbacks):
         if not (self.__process and self.__server_state == ServerState.STARTED):
             return
 
-        print("Start")
-
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
-
-        print("End")
 
     def stop(self):
         if not self.__process:
