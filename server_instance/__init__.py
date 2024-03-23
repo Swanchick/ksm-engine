@@ -1,1 +1,1 @@
-from .server import Server
+from .server_instance import ServerInstance, ServerState
