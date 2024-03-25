@@ -7,6 +7,7 @@ def start_server():
         return
 
     server.start()
+    state_label.config(text="Server has started")
     text.insert(END, "Server Started\n")
 
 
@@ -20,6 +21,11 @@ def stop_server():
 
     server.stop()
     text.insert(END, "Server stopped\n")
+
+
+def on_server_stop():
+    state_label.config(text="Server doesn't work")
+    text.insert(END, "Server stopped internally\n")
 
 
 def on_closing():
@@ -37,8 +43,9 @@ def enter():
     server.send(a)
 
 
-server = ServerInstance("Test", "python", ["script.py"])
-server.register_callback("on_callback_get", on_callback)
+server = ServerInstance("Test", "python", ["E:\\Kyryls Server Manager\\script.py"])
+server.register_callback("on_server_get", on_callback)
+server.register_callback("on_server_stop", on_server_stop)
 
 root = Tk()
 root.geometry("500x500")
@@ -65,5 +72,8 @@ start_button.pack(side=RIGHT)
 
 stop_button = Button(frame2, text="Stop Server", command=stop_server)
 stop_button.pack(side=LEFT)
+
+state_label = Label(frame2, text="Server doesn't work")
+state_label.pack(side=BOTTOM)
 
 root.mainloop()

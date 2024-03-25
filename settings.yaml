@@ -1,0 +1,10 @@
+engine:
+  ip: "127.0.0.1"
+  port: 52146
+  name: "first-engine"
+  server-instances-folder: "instances/"
+
+database:
+  ip: "127.0.0.1"
+  port: 3306
+  password: "12345678"

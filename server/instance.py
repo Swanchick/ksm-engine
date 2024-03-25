@@ -1,6 +1,6 @@
 from subprocess import Popen, PIPE
 from user import Permission
-from typing import List
+from typing import List, Optional
 from .state import ServerState
 from utils import Callbacks
 from .output import ServerOutput, OutputType
@@ -12,12 +12,10 @@ class ServerInstance(Callbacks):
     __program_name: str
     __arguments: List[str]
 
-    __process: Popen
+    __process: Optional[Popen]
     __permission: Permission = Permission()
     __output: List[ServerOutput]
     __server_state: ServerState
-
-    __server_on_output_get: callable(str)
 
     def __init__(self, name: str, program_name: str, arguments: List[str]):
         self.__name = name
@@ -36,18 +34,21 @@ class ServerInstance(Callbacks):
             return
 
         while True:
-            if self.__server_state == ServerState.STOPPED or self.__process.poll() is not None:
+            if self.__process.returncode is not None:
+                self.__server_process = ServerState.STOPPED
                 break
 
-        self.__process.terminate()
+        self.__process.kill()
         self.__server_state = ServerState.STOPPED
-        self.call("on_server_stopped")
+        self.__process = None
+
+        self.call("on_server_stop")
 
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
         self.__output.append(output)
 
-        self.call("on_callback_get", output)
+        self.call("on_server_get", output)
 
     def __get_output(self):
         if not self.__process:
@@ -102,7 +103,6 @@ class ServerInstance(Callbacks):
         if not self.__process:
             return
 
-        self.__server_state = ServerState.STOPPED
         self.__process.terminate()
 
     @property

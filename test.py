@@ -1,54 +1,25 @@
-import time
-import threading
-import subprocess
+import mysql.connector
 
-run_while = True
-command_outputs = []
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    passwd="12345678",
+    database="testdatabase"
+)
 
+cursor = db.cursor()
 
-def test_while(process: subprocess.Popen):
-    global command_outputs
+# cursor.execute("DROP TABLE Person")
 
-    outputs = 0
+# cursor.execute("CREATE TABLE Person (name VARCHAR(20), age smallint, personID int PRIMARY KEY AUTO_INCREMENT)")
+# cursor.execute("DESCRIBE Person")
 
-    while True:
-        if process.poll() is not None:
-            break
+# cursor.execute("INSERT INTO Person (name, age) VALUES (%s, %s)",
+#                ("Kyrylo", 17)
+#                )
+# db.commit()
 
-        output = process.stdout
+cursor.execute("SELECT * FROM Person")
 
-        if output is None:
-            continue
-
-        read_output = output.readline()
-
-        out = f"{outputs}: {read_output.decode("utf-8")}"
-        command_outputs.append(out)
-
-        outputs += 1
-
-        if not run_while:
-            break
-
-    process.terminate()
-
-
-def commands():
-    while True:
-        command = input("Enter command: ")
-
-        if command == "get":
-            print(command_outputs[-1])
-        elif command == "exit":
-            break
-
-
-if __name__ == "__main__":
-    process = subprocess.Popen(["python", "script.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    time.sleep(0.5)
-
-    thread1 = threading.Thread(target=test_while, args=(process,))
-    thread1.start()
-    thread2 = threading.Thread(target=commands)
-    thread2.start()
+for user in cursor.fetchall():
+    print(user)
