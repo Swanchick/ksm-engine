@@ -14,7 +14,7 @@ class PermissionManager(Database):
                              "permission_start_stop BOOLEAN DEFAULT FALSE)")
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
-        self._cursor.execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %S",
+        self._cursor.execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",
                              (user_id, instance_id))
 
         result = self._cursor.fetchone()
@@ -28,7 +28,8 @@ class PermissionManager(Database):
         if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
             return False
 
-        self._cursor.execute("SELECT %s FROM permissions WHERE user_id = %s AND instance_id = %s", (permission_type, user_id, instance_id))
+        self._cursor.execute(f"SELECT {permission_type} FROM permissions WHERE user_id = %s AND instance_id = %s",
+                             (user_id, instance_id))
 
         return self._cursor.fetchone()[0]
 
@@ -39,7 +40,10 @@ class PermissionManager(Database):
         if not self.__row_exists(user_id, instance_id):
             self.__new_permission(user_id, instance_id)
 
-        self._cursor.execute("UPDATE permissions SET %s = %s WHERE user_id = %s AND instance_id = %s", (permission_type,
-                                                                                                        state, user_id,
-                                                                                                        instance_id))
+        self._cursor.execute(f"UPDATE permissions SET {permission_type} = %s WHERE user_id = %s AND instance_id = %s",
+                             (state,
+                              user_id,
+                              instance_id
+                              ))
+
         self._connector.commit()
