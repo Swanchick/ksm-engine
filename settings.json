@@ -1,0 +1,14 @@
+{
+  "engine": {
+    "ip": "127.0.0.1",
+    "port": 52146,
+    "name": "first_engine",
+    "server_instances_folder": "instances/"
+  },
+  "database": {
+    "ip": "127.0.0.1",
+    "user": "root",
+    "port": 3306,
+    "password": "12345678"
+  }
+}

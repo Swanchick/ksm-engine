@@ -2,5 +2,5 @@ from enum import Enum
 
 
 class ServerState(Enum):
-    STARTED = 1
-    STOPPED = 2
+    STOP = 1
+    START = 2

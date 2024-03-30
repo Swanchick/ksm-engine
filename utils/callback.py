@@ -29,9 +29,25 @@ class Callbacks(ABC):
 
         super().__init__()
 
+    def __is_callback_exists(self, name: str) -> bool:
+        for callback in self._callbacks:
+            if callback.name == name:
+                return True
+
+        return False
+
     def register_callback(self, name: str, callback: callable):
         callback = Callback(name, callback)
         self._callbacks.append(callback)
+
+    def unregister_callback(self, name: str):
+        for callback in self._callbacks:
+            if callback.name == name:
+                self._callbacks.remove(callback)
+                break
+
+    def unregister_all_callbacks(self):
+        self._callbacks = []
 
     def call(self, name, *args, **kwargs):
         for callback in self._callbacks:

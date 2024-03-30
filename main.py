@@ -1,79 +1,101 @@
-from server import ServerInstance, ServerState, ServerOutput
+from server import InstanceManager, ServerOutput, ServerInstance, ServerState
 from tkinter import *
+from typing import Optional, List
+
+
+instance_manager = InstanceManager()
+instance_manager.start()
+instance_manager.load_instances()
+
+current_instance: Optional[ServerInstance] = None
+
+instances: List[ServerInstance] = []
+
+
+def select_instance(new_instance: ServerInstance):
+    print(new_instance.name)
+
+    global current_instance
+
+    for i in instance_manager.instances:
+        i.unregister_all_callbacks()
+
+    current_instance = new_instance
+
+    command_entry.delete(0, END)
+    output_text.configure(state='normal')
+    output_text.delete("1.0", END)
+    output_text.configure(state='disabled')
+
+    current_instance.register_callback("on_output_get", output_get)
+
+    label.config(text=current_instance.name)
+
+
+def enter_command(event):
+    command = command_entry.get()
+    command_entry.delete(0, END)
+    command_entry.insert(0, "")
+
+
+def output_get(output: ServerOutput):
+    output_text.configure(state='normal')
+    output_text.insert(END, output.message)
+    output_text.configure(state='disabled')
 
 
 def start_server():
-    if server.server_state == ServerState.STARTED:
+    if not current_instance:
         return
 
-    server.start()
-    state_label.config(text="Server has started")
-    text.insert(END, "Server Started\n")
+    if current_instance.server_state == ServerState.START:
+        return
 
-
-def on_callback(output: ServerOutput):
-    text.insert(END, output.message)
+    current_instance.start()
 
 
 def stop_server():
-    if server.server_state == ServerState.STOPPED:
+    if current_instance.server_state == ServerState.STOP:
         return
 
-    server.stop()
-    text.insert(END, "Server stopped\n")
+    current_instance.stop()
 
 
-def on_server_stop():
-    state_label.config(text="Server doesn't work")
-    text.insert(END, "Server stopped internally\n")
+def create_button(instance: ServerInstance, panel):
+    def on_click():
+        select_instance(instance)
 
+    return Button(panel, width=30, text=instance.name, command=on_click)
 
-def on_closing():
-    if server.server_state == ServerState.STARTED:
-        server.stop()
-
-    root.destroy()
-
-
-def enter():
-    if server.server_state == ServerState.STOPPED:
-        return
-
-    a = command_entry.get()
-    server.send(a)
-
-
-server = ServerInstance("Test", "python", ["E:\\Kyryls Server Manager\\script.py"])
-server.register_callback("on_server_get", on_callback)
-server.register_callback("on_server_stop", on_server_stop)
 
 root = Tk()
-root.geometry("500x500")
-root.resizable(False, False)
-root.title("Kyryls Server Manager - Desktop Client")
-root.protocol("WM_DELETE_WINDOW", on_closing)
+root.title("Kyryls Server Manager")
+root.geometry("800x600")
 
-text = Text(root)
-text.pack(side=TOP)
+frame_instances = Frame(root)
+frame_instances.pack(side=LEFT, fill=Y)
 
-frame = Frame(root)
-frame.pack(side=TOP, fill=X)
+for k, instance in enumerate(instance_manager.instances):
+    but = create_button(instance, frame_instances)
+    but.pack(side=TOP, fill=X)
 
-command_entry = Entry(frame, width=70)
-command_entry.pack(side=LEFT)
-command_enter = Button(frame, text="Enter", width=10, command=enter)
-command_enter.pack(side=RIGHT)
+frame_instance = Frame(root)
+frame_instance.pack(side=RIGHT, fill=BOTH)
 
-frame2 = Frame(root)
-frame2.pack(side=BOTTOM, fill=X)
+label = Label(frame_instance, text="No server", width=105)
+label.pack(fill=X)
 
-start_button = Button(frame2, text="Start Server", command=start_server)
-start_button.pack(side=RIGHT)
+output_text = Text(frame_instance, state='disabled')
+output_text.pack(side=TOP, fill=BOTH)
 
-stop_button = Button(frame2, text="Stop Server", command=stop_server)
-stop_button.pack(side=LEFT)
+command_entry = Entry(frame_instance)
+command_entry.bind("<Return>", enter_command)
+command_entry.pack(side=TOP, fill=X)
 
-state_label = Label(frame2, text="Server doesn't work")
-state_label.pack(side=BOTTOM)
+stop_server_button = Button(frame_instance, text="Stop server", command=stop_server)
+stop_server_button.pack(side=BOTTOM, fill=X)
+
+start_server_button = Button(frame_instance, text="Start server", command=start_server)
+start_server_button.pack(side=BOTTOM, fill=X)
 
 root.mainloop()

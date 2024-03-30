@@ -1,9 +1,8 @@
 from user import UserManager, PermissionManager
+from server import InstanceManager
 
-permission_manager = PermissionManager()
-permission_manager.start()
 
-# permission_manager.add_permission(1, 1, "permission_console", True)
-# permission_manager.add_permission(1, 2, "permission_start_stop", True)
+instance_manager = InstanceManager()
+instance_manager.start()
+instance_manager.create_instance("test_web2")
 
-print(permission_manager.check_permission(1, 2, "permission_start_stop"))

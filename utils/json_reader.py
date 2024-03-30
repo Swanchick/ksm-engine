@@ -1,8 +1,8 @@
-from yaml import safe_load
+from json import load
 from os.path import exists
 
 
-class YamlReader:
+class JsonReader:
     __file_name: str
 
     def __init__(self, file_name: str):
@@ -13,7 +13,7 @@ class YamlReader:
 
     def read(self, type_of_settings: str) -> dict:
         with open(self.__file_name, 'r') as f:
-            data = safe_load(f)
+            data = load(f)
             if type_of_settings not in data:
                 return {}
 
