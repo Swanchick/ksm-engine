@@ -34,8 +34,6 @@ class ServerInstance(Callbacks):
         self.call("on_server_start")
 
         while True:
-            print(f"{self.__name}: {self.__process.returncode}")
-
             if self.__process.returncode is not None:
                 break
         
@@ -76,8 +74,11 @@ class ServerInstance(Callbacks):
 
     def __setup(self):
         self.__settings = (SettingsBuilder(f"{self.__folder}settings.json")
-                           .get_settings("instance")
+                           .settings("instance")
                            .get())
+
+    def _start_process(self):
+        pass
 
     def start(self):
         if self.__server_state == ServerState.START:

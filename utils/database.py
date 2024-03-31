@@ -11,7 +11,7 @@ class Database(ABC):
 
     def __init__(self):
         self.__settings = (SettingsBuilder()
-                           .get_settings("database")
+                           .settings("database")
                            .get())
 
         self.__init_database()

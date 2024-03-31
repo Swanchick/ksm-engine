@@ -13,7 +13,7 @@ class InstanceManager(Database):
 
     def __load_settings(self):
         self.__settings = (SettingsBuilder()
-                           .get_settings("engine")
+                           .settings("engine")
                            .get())
 
     def __generate_folder(self, instance_name: str) -> str:

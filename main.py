@@ -13,12 +13,10 @@ instances: List[ServerInstance] = []
 
 
 def select_instance(new_instance: ServerInstance):
-    print(new_instance.name)
-
     global current_instance
 
-    for i in instance_manager.instances:
-        i.unregister_all_callbacks()
+    if current_instance is not None:
+        current_instance.unregister_all_callbacks()
 
     current_instance = new_instance
 
@@ -27,7 +25,11 @@ def select_instance(new_instance: ServerInstance):
     output_text.delete("1.0", END)
     output_text.configure(state='disabled')
 
+    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
+
     current_instance.register_callback("on_output_get", output_get)
+    current_instance.register_callback("on_server_start", on_server_start)
+    current_instance.register_callback("on_server_stop", on_server_stop)
 
     label.config(text=current_instance.name)
 
@@ -68,6 +70,14 @@ def create_button(instance: ServerInstance, panel):
     return Button(panel, width=30, text=instance.name, command=on_click)
 
 
+def on_server_start():
+    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
+
+
+def on_server_stop():
+    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
+
+
 root = Tk()
 root.title("Kyryls Server Manager")
 root.geometry("800x600")
@@ -97,5 +107,8 @@ stop_server_button.pack(side=BOTTOM, fill=X)
 
 start_server_button = Button(frame_instance, text="Start server", command=start_server)
 start_server_button.pack(side=BOTTOM, fill=X)
+
+server_state = Label(frame_instance, text="Server State: Server has not been chosen")
+server_state.pack(side=BOTTOM, fill=X)
 
 root.mainloop()

@@ -11,10 +11,8 @@ class JsonReader:
 
         self.__file_name = file_name
 
-    def read(self, type_of_settings: str) -> dict:
+    def read(self) -> dict:
         with open(self.__file_name, 'r') as f:
             data = load(f)
-            if type_of_settings not in data:
-                return {}
 
-            return data[type_of_settings]
+            return data
