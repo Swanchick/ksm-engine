@@ -1,10 +1,12 @@
+from abc import ABC
+
 from utils import Database
-from typing import List
+from typing import List, Dict, Optional
 from .instance import ServerInstance
-from utils import SettingsBuilder, EngineSettings
+from utils import SettingsBuilder, EngineSettings, Api
 
 
-class InstanceManager(Database):
+class InstanceManager(Database, Api):
     __instances: List[ServerInstance]
     __settings: EngineSettings
 
@@ -18,6 +20,11 @@ class InstanceManager(Database):
 
     def __generate_folder(self, instance_name: str) -> str:
         return f"{self.__settings.instance_folder}{instance_name}/"
+
+    def __get_instance_by_id(self, instance_id: int) -> Optional[ServerInstance]:
+        for instance in self.__instances:
+            if instance.instance_id == instance_id:
+                return instance
 
     def start(self):
         self.__load_settings()
@@ -58,6 +65,13 @@ class InstanceManager(Database):
             instance = ServerInstance(instance_id, instance_name, instance_folder)
 
             self.__instances.append(instance)
+
+    def request(self, method_name: str, data: Dict) -> Optional[Dict]:
+        instance_id = int(data["id"])
+        instance = self.__get_instance_by_id(instance_id)
+        output_data = instance.call(method_name, *data["args"])
+
+        return output_data
 
     @property
     def instances(self) -> List[ServerInstance]:

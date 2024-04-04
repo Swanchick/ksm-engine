@@ -1,114 +1,16 @@
-from server import InstanceManager, ServerOutput, ServerInstance, ServerState
-from tkinter import *
-from typing import Optional, List
+from flask import Flask, jsonify, request
 
 
-instance_manager = InstanceManager()
-instance_manager.start()
-instance_manager.load_instances()
-
-current_instance: Optional[ServerInstance] = None
-
-instances: List[ServerInstance] = []
+app = Flask(__name__)
 
 
-def select_instance(new_instance: ServerInstance):
-    global current_instance
+@app.route("/instance/", methods=["POST"])
+def main():
+    if not request.method != "POST":
+        return "Bad request", 400
 
-    if current_instance is not None:
-        current_instance.unregister_all_callbacks()
-
-    current_instance = new_instance
-
-    command_entry.delete(0, END)
-    output_text.configure(state='normal')
-    output_text.delete("1.0", END)
-    output_text.configure(state='disabled')
-
-    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
-
-    current_instance.register_callback("on_output_get", output_get)
-    current_instance.register_callback("on_server_start", on_server_start)
-    current_instance.register_callback("on_server_stop", on_server_stop)
-
-    label.config(text=current_instance.name)
+    return jsonify({"asd": "asa"}, mimetype="application/json")
 
 
-def enter_command(event):
-    command = command_entry.get()
-    command_entry.delete(0, END)
-    command_entry.insert(0, "")
-
-
-def output_get(output: ServerOutput):
-    output_text.configure(state='normal')
-    output_text.insert(END, output.message)
-    output_text.configure(state='disabled')
-
-
-def start_server():
-    if not current_instance:
-        return
-
-    if current_instance.server_state == ServerState.START:
-        return
-
-    current_instance.start()
-
-
-def stop_server():
-    if current_instance.server_state == ServerState.STOP:
-        return
-
-    current_instance.stop()
-
-
-def create_button(instance: ServerInstance, panel):
-    def on_click():
-        select_instance(instance)
-
-    return Button(panel, width=30, text=instance.name, command=on_click)
-
-
-def on_server_start():
-    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
-
-
-def on_server_stop():
-    server_state.configure(text=f"Server State: {current_instance.server_state.name}")
-
-
-root = Tk()
-root.title("Kyryls Server Manager")
-root.geometry("800x600")
-
-frame_instances = Frame(root)
-frame_instances.pack(side=LEFT, fill=Y)
-
-for k, instance in enumerate(instance_manager.instances):
-    but = create_button(instance, frame_instances)
-    but.pack(side=TOP, fill=X)
-
-frame_instance = Frame(root)
-frame_instance.pack(side=RIGHT, fill=BOTH)
-
-label = Label(frame_instance, text="No server", width=105)
-label.pack(fill=X)
-
-output_text = Text(frame_instance, state='disabled')
-output_text.pack(side=TOP, fill=BOTH)
-
-command_entry = Entry(frame_instance)
-command_entry.bind("<Return>", enter_command)
-command_entry.pack(side=TOP, fill=X)
-
-stop_server_button = Button(frame_instance, text="Stop server", command=stop_server)
-stop_server_button.pack(side=BOTTOM, fill=X)
-
-start_server_button = Button(frame_instance, text="Start server", command=start_server)
-start_server_button.pack(side=BOTTOM, fill=X)
-
-server_state = Label(frame_instance, text="Server State: Server has not been chosen")
-server_state.pack(side=BOTTOM, fill=X)
-
-root.mainloop()
+if __name__ == "__main__":
+    app.run(debug=True)

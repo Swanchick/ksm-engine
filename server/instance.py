@@ -1,13 +1,13 @@
 from subprocess import Popen, PIPE
 from typing import List, Optional
 from .state import ServerState
-from utils import Callbacks
+from utils import ApiCaller
 from .output import ServerOutput, OutputType
 from threading import Thread
 from utils import SettingsBuilder, InstanceSettings
 
 
-class ServerInstance(Callbacks):
+class ServerInstance(ApiCaller):
     __id: int
     __name: str
     __folder: str
@@ -25,13 +25,16 @@ class ServerInstance(Callbacks):
         self.__server_process = True
         self.__server_state = ServerState.STOP
 
+        self.__init_api()
+
         super().__init__()
+
+    def __init_api(self):
+        pass
 
     def __monitor_server(self):
         if not self.__process:
             return
-
-        self.call("on_server_start")
 
         while True:
             if self.__process.returncode is not None:
@@ -40,13 +43,12 @@ class ServerInstance(Callbacks):
         self.__server_state = ServerState.STOP
         self.__process = None
 
-        self.call("on_server_stop")
-
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
         self.__output.append(output)
 
-        self.call("on_output_get", output)
+        # To Do:
+        # Send this information to client
 
     def __get_output(self):
         if not self.__process:
@@ -107,8 +109,6 @@ class ServerInstance(Callbacks):
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
 
-        self.call("on_request_send", request)
-
     def stop(self):
         if not self.__process:
             return
@@ -116,7 +116,7 @@ class ServerInstance(Callbacks):
         self.__process.terminate()
 
     @property
-    def server_state(self) -> ServerState:
+    def instance_state(self) -> ServerState:
         return self.__server_state
 
     @property
