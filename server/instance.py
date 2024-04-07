@@ -18,6 +18,8 @@ class ServerInstance(ApiCaller):
     __server_state: ServerState
 
     def __init__(self, instance_id: int, name: str, instance_folder: str):
+        super().__init__()
+
         self.__id = instance_id
         self.__name = name
         self.__folder = instance_folder
@@ -27,10 +29,10 @@ class ServerInstance(ApiCaller):
 
         self.__init_api()
 
-        super().__init__()
-
     def __init_api(self):
-        pass
+        self.register("server_start", self.start)
+        self.register("server_stop", self.stop)
+        self.register("get_last_output", self.get_last_output)
 
     def __monitor_server(self):
         if not self.__process:
@@ -42,6 +44,13 @@ class ServerInstance(ApiCaller):
         
         self.__server_state = ServerState.STOP
         self.__process = None
+
+    def get_last_output(self):
+        data = {
+            "output": self.__output[-1].message if self.__output else None
+        }
+
+        return data
 
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
@@ -114,6 +123,8 @@ class ServerInstance(ApiCaller):
             return
 
         self.__process.terminate()
+
+        print(f"Server Instance: {self.__name} has been stopped.")
 
     @property
     def instance_state(self) -> ServerState:

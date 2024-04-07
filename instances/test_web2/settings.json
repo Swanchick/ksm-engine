@@ -1,8 +1,0 @@
-{
-  "instance":
-  {
-    "program": "python",
-    "script": "main.py",
-    "arguments": []
-  }
-}

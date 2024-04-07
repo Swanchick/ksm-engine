@@ -1,5 +1,3 @@
-from abc import ABC
-
 from utils import Database
 from typing import List, Dict, Optional
 from .instance import ServerInstance
@@ -69,7 +67,9 @@ class InstanceManager(Database, Api):
     def request(self, method_name: str, data: Dict) -> Optional[Dict]:
         instance_id = int(data["id"])
         instance = self.__get_instance_by_id(instance_id)
-        output_data = instance.call(method_name, *data["args"])
+
+        args = data["args"] if "args" in data else []
+        output_data = instance.call(method_name, *args)
 
         return output_data
 
