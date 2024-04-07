@@ -1,7 +1,3 @@
-from typing import List
-from abc import ABC
-
-
 class Callback:
     __name: str
     _callback: callable

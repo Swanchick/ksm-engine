@@ -1,12 +1,6 @@
-from abc import ABC, abstractmethod
+from abc import ABC
+from typing import List
 from .callback import Callback
-from typing import List, Optional, Dict
-
-
-class Api(ABC):
-    @abstractmethod
-    def request(self, method_name: str, data: Dict) -> Optional[Dict]:
-        pass
 
 
 class ApiCaller(ABC):
