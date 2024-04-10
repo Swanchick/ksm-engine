@@ -1,7 +1,8 @@
 from utils import Database
 from typing import List, Dict, Optional
 from .instance import ServerInstance
-from utils import SettingsBuilder, EngineSettings, Api
+from settings import SettingsCreator, EngineSettings
+from api import Api
 
 
 class InstanceManager(Database, Api):
@@ -12,9 +13,8 @@ class InstanceManager(Database, Api):
         pass
 
     def __load_settings(self):
-        self.__settings = (SettingsBuilder()
-                           .settings("engine")
-                           .get())
+        self.__settings = (SettingsCreator()
+                           .settings("engine"))
 
     def __generate_folder(self, instance_name: str) -> str:
         return f"{self.__settings.instance_folder}{instance_name}/"

@@ -1,10 +1,10 @@
 from subprocess import Popen, PIPE
 from typing import List, Optional
 from .state import ServerState
-from utils import ApiCaller
 from .output import ServerOutput, OutputType
 from threading import Thread
-from utils import SettingsBuilder, InstanceSettings
+from settings import SettingsCreator, InstanceSettings
+from api import ApiCaller
 
 
 class ServerInstance(ApiCaller):

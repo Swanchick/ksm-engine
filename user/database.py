@@ -1,5 +1,5 @@
 from typing import Optional
-from .settings import SettingsBuilder, DatabaseSettings
+from settings import SettingsCreator, DatabaseSettings
 from mysql.connector import connect as mysql_connect
 from abc import ABC, abstractmethod
 
@@ -10,9 +10,8 @@ class Database(ABC):
     _cursor = None
 
     def __init__(self):
-        self.__settings = (SettingsBuilder()
-                           .settings("database")
-                           .get())
+        self.__settings = (SettingsCreator()
+                           .settings("database"))
 
         self.__init_database()
         super().__init__()

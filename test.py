@@ -1,11 +1,19 @@
-from github import Github
+class Power:
+    registered_classes = {}
 
-repo_url = "Swanchick/ksm-settings"
+    def __call__(self, the_class):
+        self.registered_classes[the_class.name] = the_class
 
-github = Github()
+        print(self.registered_classes)
 
-repo = github.get_repo(repo_url)
-contents = repo.get_contents("")
+        return the_class
 
-for content in contents:
-    print(content)
+
+@Power()
+class Test:
+    name: str = "Test"
+
+
+@Power()
+class Test2:
+    name: str = "Test2"
