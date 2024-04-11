@@ -1,7 +1,8 @@
 from typing import Optional
-from settings import SettingsCreator, DatabaseSettings
+from settings import SettingsCreator
 from mysql.connector import connect as mysql_connect
 from abc import ABC, abstractmethod
+from .settings_database import DatabaseSettings
 
 
 class Database(ABC):

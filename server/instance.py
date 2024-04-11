@@ -3,7 +3,7 @@ from typing import List, Optional
 from .state import ServerState
 from .output import ServerOutput, OutputType
 from threading import Thread
-from settings import SettingsCreator, InstanceSettings
+from .settings_instance import InstanceSettings
 from api import ApiCaller
 
 

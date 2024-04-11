@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 from .instance import ServerInstance
-from settings import SettingsCreator, EngineSettings
+from settings import SettingsCreator
+from engine import EngineSettings
 from api import Api
 from database_utils import Database
 
