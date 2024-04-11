@@ -1,9 +1,12 @@
 from .settings import Settings
 from typing import List
-from .settings_creator import SettingsCreator
+from .settings_manager import SettingsManager
 
 
-@SettingsCreator.register_settings
+settings_manager = SettingsManager()
+
+
+@settings_manager.register_settings
 class InstanceSettings(Settings):
     __program: str
     __script: str

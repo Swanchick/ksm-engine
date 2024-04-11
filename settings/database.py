@@ -1,8 +1,11 @@
 from .settings import Settings
-from .settings_creator import SettingsCreator
+from .settings_manager import SettingsManager
 
 
-@SettingsCreator.register_settings
+settings_manager = SettingsManager()
+
+
+@settings_manager.register_settings
 class DatabaseSettings(Settings):
     __ip: str
     __user: str

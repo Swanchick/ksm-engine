@@ -1,13 +1,12 @@
 from utils import JsonReader
 from .settings import Settings
-from typing import Dict, Type
+from typing import Dict
+from .settings_manager import SettingsManager
 
 
 class SettingsCreator:
     __path: str
     __settings: Settings
-
-    settings_types: Dict[str, Type[Settings]] = {}
 
     def __init__(self, path: str = "settings.json"):
         self.__path = path
@@ -17,15 +16,10 @@ class SettingsCreator:
 
         return reader.read()
 
-    @classmethod
-    def register_settings(cls, settings_cls: Type[Settings]):
-        name = settings_cls.settings_name
-        cls.settings_types[name] = settings_cls
-
-        return settings_cls
-
     def settings(self, settings_type: str):
-        self.__settings = self.settings_types[settings_type]()
+        settings_manager = SettingsManager()
+
+        self.__settings = settings_manager.get_settings(settings_type)()
 
         data = self.__read_file()
         if settings_type not in data:

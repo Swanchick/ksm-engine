@@ -1,4 +1,4 @@
-from utils import Database
+from database_utils import Database
 
 
 class PermissionManager(Database):
