@@ -1,5 +1,5 @@
-from .settings import Settings
-from .settings_manager import SettingsManager
+from settings.settings import Settings
+from settings.settings_manager import SettingsManager
 
 
 settings_manager = SettingsManager()

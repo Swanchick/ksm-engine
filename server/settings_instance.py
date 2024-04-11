@@ -1,6 +1,6 @@
-from .settings import Settings
+from settings.settings import Settings
 from typing import List
-from .settings_manager import SettingsManager
+from settings.settings_manager import SettingsManager
 
 
 settings_manager = SettingsManager()
