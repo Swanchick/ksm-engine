@@ -9,6 +9,7 @@ from api import ApiCaller
 
 SETTING_FILE = "ksm_settings.json"
 
+
 class ServerInstance(ApiCaller):
     __id: int
     __name: str
@@ -94,7 +95,7 @@ class ServerInstance(ApiCaller):
 
     def start(self):
         if self.__server_state == ServerState.START:
-            return
+            return {"status": 500, "message": "Server already started!"}
 
         self.__setup()
 
@@ -112,20 +113,24 @@ class ServerInstance(ApiCaller):
 
         print(f"Server Instance: {self.__name} has been started.")
 
+        return {"status": 200, "message": "Instance has been successfully started."}
+
     def send(self, request: str):
         if not (self.__process and self.__server_state == ServerState.START):
-            return
+            return {"status": 500, "message": "Server is not started!"}
 
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
 
     def stop(self):
         if not self.__process:
-            return
+            return {"status": 500, "message": "Server is not started!"}
 
         self.__process.terminate()
 
         print(f"Server Instance: {self.__name} has been stopped.")
+
+        return {"status": 200, "message": "Server has been successfully stopped."}
 
     @property
     def instance_state(self) -> ServerState:

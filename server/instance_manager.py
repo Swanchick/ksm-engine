@@ -4,6 +4,7 @@ from settings import SettingsCreator
 from engine import EngineSettings
 from api import Api
 from database_utils import Database
+from .instance_loader import InstanceLoader
 
 
 class InstanceManager(Database, Api):
@@ -35,9 +36,12 @@ class InstanceManager(Database, Api):
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
                              "name CHAR(128) UNIQUE)")
 
-    def create_instance(self, name):
+    def create_instance(self, name: str, instance_type: str):
         if not (self._connector and self._cursor):
             return
+
+        instance_loader = InstanceLoader(name, instance_type)
+        instance_loader.load()
 
         self._cursor.execute("INSERT INTO instances (name) VALUES (%s)", (name, ))
         self._connector.commit()
