@@ -1,4 +1,4 @@
-from utils import Database
+from database_utils import Database
 from .user import User
 from typing import List, Optional
 
@@ -9,18 +9,18 @@ class UserManager(Database):
         self._cursor = self._connector.cursor()
 
         self._cursor.execute("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY AUTO_INCREMENT, name TEXT, "
-                             "password text)")
+                             "password text, administrator BOOLEAN DEFAULT false)")
 
-    def get_users_by_id(self, uuid: str):
+    def get_users_by_id(self, id: int):
         pass
 
-    def create_user(self, name, password):
+    def create_user(self, name: str, password: str, administrator: bool):
         if not (self._connector and self._cursor):
             return
 
-        user = User(name, password)
+        user = User(name, password, administrator)
 
-        self._cursor.execute("INSERT INTO users (name, password) VALUES (%s, %s)", (user.name, user.password))
+        self._cursor.execute("INSERT INTO users (name, password, administrator) VALUES (%s, %s, %s)", (user.name, user.password, user.administrator))
         self._connector.commit()
 
         return user
@@ -34,6 +34,7 @@ class UserManager(Database):
         users = []
 
         for user_data in self._cursor.fetchall():
-            users.append(User(user_data[1], user_data[2], user_data[0], False))
+            user = User(user_data[1], user_data[2], user_data[3], user_data[0], False)
+            users.append(user)
 
         return users
