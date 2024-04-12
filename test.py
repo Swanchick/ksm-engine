@@ -1,6 +1,5 @@
-from settings import SettingsCreator
+from server import InstanceLoader
 
+instance_loader = InstanceLoader("web_1", "python")
 
-settings = SettingsCreator("settings.json").settings("database")
-
-print(settings)
+instance_loader.load()

@@ -4,8 +4,10 @@ from .state import ServerState
 from .output import ServerOutput, OutputType
 from threading import Thread
 from .settings_instance import InstanceSettings
+from settings import SettingsCreator
 from api import ApiCaller
 
+SETTING_FILE = "ksm_settings.json"
 
 class ServerInstance(ApiCaller):
     __id: int
@@ -84,9 +86,8 @@ class ServerInstance(ApiCaller):
             self.__add_message(message, OutputType.ERR)
 
     def __setup(self):
-        self.__settings = (SettingsBuilder(f"{self.__folder}settings.json")
-                           .settings("instance")
-                           .get())
+        self.__settings = (SettingsCreator(f"{self.__folder}{SETTING_FILE}")
+                           .settings("instance"))
 
     def _start_process(self):
         pass

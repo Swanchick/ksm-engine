@@ -10,5 +10,8 @@
     "user": "root",
     "port": 3306,
     "password": "12345678"
+  },
+  "instance_packages": {
+    "python": "https://github.com/Swanchick/ksm-python.git"
   }
 }
