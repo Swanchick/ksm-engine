@@ -1,6 +1,6 @@
 from subprocess import Popen, PIPE
 from typing import List, Optional
-from user import PermissionManager, PERMISSION_START_STOP
+from user import PermissionManager, PERMISSION_START_STOP, PERMISSION_CONSOLE
 from .state import ServerState
 from .output import ServerOutput, OutputType
 from threading import Thread
@@ -52,13 +52,6 @@ class ServerInstance(ApiCaller):
         self.__server_state = ServerState.STOP
         self.__process = None
 
-    def get_last_output(self):
-        data = {
-            "output": self.__output[-1].message if self.__output else None
-        }
-
-        return ResponseBuilder().status(200).addition_data("instance", data).build()
-
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
         self.__output.append(output)
@@ -97,9 +90,9 @@ class ServerInstance(ApiCaller):
     def _start_process(self):
         pass
 
-    def start(self, user_id):
+    def start(self, user_id: int):
         if not self.__permission_manager.check_permission(user_id, self.__id, PERMISSION_START_STOP):
-            return ResponseBuilder().status(500).message("Server is already started").build()
+            return ResponseBuilder().status(403).message("Forbidden").build()
 
         if self.__server_state == ServerState.START:
             return ResponseBuilder().status(500).message("Server is already started").build()
@@ -129,7 +122,10 @@ class ServerInstance(ApiCaller):
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
 
-    def stop(self):
+    def stop(self, user_id: int):
+        if not self.__permission_manager.check_permission(user_id, self.__id, PERMISSION_START_STOP):
+            return ResponseBuilder().status(403).message("Forbidden").build()
+
         if not self.__process:
             return ResponseBuilder().status(500).message("Server is not started").build()
 
@@ -138,6 +134,16 @@ class ServerInstance(ApiCaller):
         print(f"Server Instance: {self.__name} has been stopped.")
 
         return ResponseBuilder().status(200).message("Server has been successfully stopped.").build()
+
+    def get_last_output(self, user_id: int):
+        if not self.__permission_manager.check_permission(user_id, self.__id, PERMISSION_CONSOLE):
+            return ResponseBuilder().status(403).message("Forbidden").build()
+
+        data = {
+            "output": self.__output[-1].message if self.__output else None
+        }
+
+        return ResponseBuilder().status(200).addition_data("instance", data).build()
 
     @property
     def instance_state(self) -> ServerState:

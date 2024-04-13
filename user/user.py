@@ -11,7 +11,7 @@ class User:
     def __init__(self, name: str, password: str, administrator: bool,  user_id: str = None, hash_password: bool = True):
         self.__user_id = user_id if user_id else str(uuid4())
         self.__name = name
-        self.__administrator = administrator
+        self.__administrator = bool(administrator)
 
         self.__password = HashPassword.hash_password(password) if hash_password else password
 
@@ -31,5 +31,5 @@ class User:
         return self.__password
 
     @property
-    def administrator(self):
+    def is_administrator(self):
         return self.__administrator

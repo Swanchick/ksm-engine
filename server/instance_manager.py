@@ -4,6 +4,9 @@ from .instance import ServerInstance
 from api import Api
 from database_utils import Database
 from .instance_loader import InstanceLoader
+from utils import ResponseBuilder
+
+KSM_DATABASE = "ksm_database"
 
 
 class InstanceManager(Database, Api):
@@ -25,7 +28,7 @@ class InstanceManager(Database, Api):
     def start(self):
         self.__instances = []
 
-        self._connector = self._connect("ksm_database")
+        self._connector = self._connect(KSM_DATABASE)
         self._cursor = self._connector.cursor()
 
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
@@ -75,7 +78,7 @@ class InstanceManager(Database, Api):
         instance = self.__get_instance_by_id(instance_id)
 
         if not instance:
-            return {"status": 500, "message": f"Instance with id {instance_id} is not exist!"}
+            return ResponseBuilder().status(500).message("Instance not found").build()
 
         args = instance_data["args"] if "args" in instance_data else []
 

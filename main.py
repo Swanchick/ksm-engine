@@ -14,13 +14,15 @@ def instance_requests(method_name: str):
         return ResponseBuilder().status(400).message("Bad request!").build()
 
     data = request.json
-    return ResponseBuilder().status(200).message("Good response").build()
+    response = engine.instance_call(method_name, data)
+
+    return response
 
 
 @app.route("/api/instance/create", methods=["POST"])
 def create_instance():
     if request.method != "POST":
-        return ResponseBuilder().status(200).message("Bad request!").build()
+        return ResponseBuilder().status(400).message("Bad request!").build()
 
     # ToDo:
     # 1. Check if user is admin
@@ -31,6 +33,18 @@ def create_instance():
         return jsonify(ResponseBuilder().status(500).message("Invalid data!").build())
 
     return jsonify(ResponseBuilder().status(200).message("Okay").build())
+
+
+@app.route("/api/user/create", methods=["POST"])
+def create_user():
+    if request.method != "POST":
+        return ResponseBuilder().status(400).message("Bad request!")
+
+    data = request.json
+
+    response = engine.user_create(data)
+
+    return response
 
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
-from server import InstanceLoader
+from user import UserManager
 
-instance_loader = InstanceLoader("web_1", "python")
 
-instance_loader.load()
+user_manager = UserManager()
+user_manager.start()
+
+user = user_manager.get_users_by_id(1)
+
+print(user.is_administrator)
