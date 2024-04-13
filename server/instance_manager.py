@@ -1,8 +1,6 @@
 from typing import List, Dict, Optional
 from user import PermissionManager
 from .instance import ServerInstance
-from settings import SettingsCreator
-from engine import EngineSettings
 from api import Api
 from database_utils import Database
 from .instance_loader import InstanceLoader
@@ -11,17 +9,13 @@ from .instance_loader import InstanceLoader
 class InstanceManager(Database, Api):
     __instances: List[ServerInstance]
     __permission_manager: PermissionManager
-    __settings: EngineSettings
+    __instance_folder: str
 
     def __load_instance(self, name):
         pass
 
-    def __load_settings(self):
-        self.__settings = (SettingsCreator()
-                           .settings("engine"))
-
     def __generate_folder(self, instance_name: str) -> str:
-        return f"{self.__settings.instance_folder}{instance_name}/"
+        return f"{self.__instance_folder}{instance_name}/"
 
     def __get_instance_by_id(self, instance_id: int) -> Optional[ServerInstance]:
         for instance in self.__instances:
@@ -29,7 +23,6 @@ class InstanceManager(Database, Api):
                 return instance
 
     def start(self):
-        self.__load_settings()
         self.__instances = []
 
         self._connector = self._connect("ksm_database")
@@ -45,7 +38,7 @@ class InstanceManager(Database, Api):
         if not (self._connector and self._cursor):
             return
 
-        instance_loader = InstanceLoader(name, instance_type)
+        instance_loader = InstanceLoader(self.__instance_folder, name, instance_type)
         instance_loader.load()
 
         self._cursor.execute("INSERT INTO instances (name) VALUES (%s)", (name, ))
@@ -57,6 +50,9 @@ class InstanceManager(Database, Api):
         instance = ServerInstance(self.__permission_manager, instance_id, name, instance_folder)
 
         self.__instances.append(instance)
+
+    def load_folder(self, instance_folder: str):
+        self.__instance_folder = instance_folder
 
     def load_instances(self):
         if not (self._connector and self._cursor):

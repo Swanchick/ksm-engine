@@ -1,6 +1,5 @@
 from utils import RepoDownloader
 from settings import SettingsCreator
-from engine import EngineSettings
 
 
 INSTANCE_LOADER = "instance_packages"
@@ -9,10 +8,11 @@ INSTANCE_LOADER = "instance_packages"
 class InstanceLoader:
     __name: str
     __repo_url: str
-    __engine_settings: EngineSettings
+    __instance_folder: str
 
-    def __init__(self, name: str, instance_type: str):
+    def __init__(self, instance_folder: str, name: str, instance_type: str):
         self.__name = name
+        self.__instance_folder = instance_folder
 
         settings_creator = SettingsCreator()
         data = settings_creator.data()
@@ -25,10 +25,8 @@ class InstanceLoader:
 
         self.__repo_url = data[instance_type]
 
-        self.__engine_settings = SettingsCreator().settings("engine")
-
     def load(self):
-        path = f"{self.__engine_settings.instance_folder}{self.__name}/"
+        path = f"{self.__instance_folder}{self.__name}/"
 
         repo_downloader = RepoDownloader(self.__repo_url, path)
         repo_downloader.download()
