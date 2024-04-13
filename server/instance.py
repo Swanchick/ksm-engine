@@ -1,11 +1,13 @@
 from subprocess import Popen, PIPE
 from typing import List, Optional
+from user import PermissionManager, PERMISSION_START_STOP
 from .state import ServerState
 from .output import ServerOutput, OutputType
 from threading import Thread
 from .settings_instance import InstanceSettings
 from settings import SettingsCreator
 from api import ApiCaller
+from utils import ResponseBuilder
 
 SETTING_FILE = "ksm_settings.json"
 
@@ -19,10 +21,12 @@ class ServerInstance(ApiCaller):
     __process: Optional[Popen]
     __output: List[ServerOutput]
     __server_state: ServerState
+    __permission_manager: PermissionManager
 
-    def __init__(self, instance_id: int, name: str, instance_folder: str):
+    def __init__(self, permission_manager: PermissionManager, instance_id: int, name: str, instance_folder: str):
         super().__init__()
 
+        self.__permission_manager = permission_manager
         self.__id = instance_id
         self.__name = name
         self.__folder = instance_folder
@@ -53,7 +57,7 @@ class ServerInstance(ApiCaller):
             "output": self.__output[-1].message if self.__output else None
         }
 
-        return data
+        return ResponseBuilder().status(200).addition_data("instance", data).build()
 
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
@@ -93,9 +97,12 @@ class ServerInstance(ApiCaller):
     def _start_process(self):
         pass
 
-    def start(self):
+    def start(self, user_id):
+        if not self.__permission_manager.check_permission(user_id, self.__id, PERMISSION_START_STOP):
+            return ResponseBuilder().status(500).message("Server is already started").build()
+
         if self.__server_state == ServerState.START:
-            return {"status": 500, "message": "Server already started!"}
+            return ResponseBuilder().status(500).message("Server is already started").build()
 
         self.__setup()
 
@@ -113,24 +120,24 @@ class ServerInstance(ApiCaller):
 
         print(f"Server Instance: {self.__name} has been started.")
 
-        return {"status": 200, "message": "Instance has been successfully started."}
+        return ResponseBuilder().status(200).message("Server has been successfully started.").build()
 
     def send(self, request: str):
         if not (self.__process and self.__server_state == ServerState.START):
-            return {"status": 500, "message": "Server is not started!"}
+            return ResponseBuilder().status(500).message("Server is not started").build()
 
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
 
     def stop(self):
         if not self.__process:
-            return {"status": 500, "message": "Server is not started!"}
+            return ResponseBuilder().status(500).message("Server is not started").build()
 
         self.__process.terminate()
 
         print(f"Server Instance: {self.__name} has been stopped.")
 
-        return {"status": 200, "message": "Server has been successfully stopped."}
+        return ResponseBuilder().status(200).message("Server has been successfully stopped.").build()
 
     @property
     def instance_state(self) -> ServerState:

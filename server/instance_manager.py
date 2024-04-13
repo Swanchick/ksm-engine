@@ -1,4 +1,5 @@
 from typing import List, Dict, Optional
+from user import PermissionManager
 from .instance import ServerInstance
 from settings import SettingsCreator
 from engine import EngineSettings
@@ -9,6 +10,7 @@ from .instance_loader import InstanceLoader
 
 class InstanceManager(Database, Api):
     __instances: List[ServerInstance]
+    __permission_manager: PermissionManager
     __settings: EngineSettings
 
     def __load_instance(self, name):
@@ -36,6 +38,9 @@ class InstanceManager(Database, Api):
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
                              "name CHAR(128) UNIQUE)")
 
+        self.__permission_manager = PermissionManager()
+        self.__permission_manager.start()
+
     def create_instance(self, name: str, instance_type: str):
         if not (self._connector and self._cursor):
             return
@@ -49,7 +54,7 @@ class InstanceManager(Database, Api):
         instance_id = self._cursor.fetchone()[0]
         instance_folder = self.__generate_folder(name)
 
-        instance = ServerInstance(instance_id, name, instance_folder)
+        instance = ServerInstance(self.__permission_manager, instance_id, name, instance_folder)
 
         self.__instances.append(instance)
 
@@ -65,16 +70,22 @@ class InstanceManager(Database, Api):
             instance_name = instance_data[1]
             instance_folder = self.__generate_folder(instance_name)
 
-            instance = ServerInstance(instance_id, instance_name, instance_folder)
+            instance = ServerInstance(self.__permission_manager, instance_id, instance_name, instance_folder)
 
             self.__instances.append(instance)
 
-    def request(self, method_name: str, data: Dict) -> Optional[Dict]:
-        instance_id = int(data["id"])
+    def request(self, method_name: str, instance_data: Dict) -> Optional[Dict]:
+        instance_id = int(instance_data["instance_id"])
         instance = self.__get_instance_by_id(instance_id)
 
-        args = data["args"] if "args" in data else []
-        output_data = instance.call(method_name, *args)
+        if not instance:
+            return {"status": 500, "message": f"Instance with id {instance_id} is not exist!"}
+
+        args = instance_data["args"] if "args" in instance_data else []
+
+        final_args = [instance_data["user_id"]] + args
+
+        output_data = instance.call(method_name, *final_args)
 
         return output_data
 

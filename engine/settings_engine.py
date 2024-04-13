@@ -11,6 +11,7 @@ class EngineSettings(Settings):
     __port: int
     __name: str
     __instance_folder: str
+    __password: str
 
     settings_name = "engine"
 
@@ -19,6 +20,10 @@ class EngineSettings(Settings):
         self.__port = data["port"]
         self.__name = data["name"]
         self.__instance_folder = data["server_instances_folder"]
+        self.__password = data["password"]
+
+    def check_password(self, engine_password) -> bool:
+        return engine_password == self.__password
 
     @property
     def ip(self) -> str:

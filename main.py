@@ -35,7 +35,7 @@ def create_instance():
 
     instance_manager.create_instance(instance_data["name"], instance_data["instance_type"])
 
-    return jsonify({"status": "OK"})
+    return jsonify({"status": 200})
 
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
 from database_utils import Database
 
+SYSTEM_ID = -100
+
+PERMISSION_CONSOLE = "permission_console"
+PERMISSION_START_STOP = "permission_start_stop"
+
 
 class PermissionManager(Database):
     def start(self):
@@ -10,8 +15,8 @@ class PermissionManager(Database):
                              "user_id INT, "
                              "instance_id INT,"
                              "PRIMARY KEY (user_id, instance_id),"
-                             "permission_console BOOLEAN DEFAULT FALSE,"
-                             "permission_start_stop BOOLEAN DEFAULT FALSE)")
+                             f"{PERMISSION_CONSOLE} BOOLEAN DEFAULT FALSE,"
+                             f"{PERMISSION_START_STOP} BOOLEAN DEFAULT FALSE)")
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
         self._cursor.execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",
@@ -25,6 +30,9 @@ class PermissionManager(Database):
         self._connector.commit()
 
     def check_permission(self, user_id: int, instance_id: int, permission_type: str) -> bool:
+        if user_id == SYSTEM_ID:
+            return True
+
         if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
             return False
 
