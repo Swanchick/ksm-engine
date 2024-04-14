@@ -14,6 +14,9 @@ class UserManager(Database):
                              "administrator BOOLEAN DEFAULT false)")
 
     def get_user_by_id(self, user_id: int) -> Optional[User]:
+        if user_id is None:
+            return None
+
         if not (self._connector and self._cursor):
             return
 
