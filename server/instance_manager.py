@@ -14,8 +14,11 @@ class InstanceManager(Database, Api):
     __permission_manager: PermissionManager
     __instance_folder: str
 
-    def __load_instance(self, name):
-        pass
+    def __load_instance(self, instance_id: int, instance_name, instance_folder: str) -> ServerInstance:
+        instance = ServerInstance(self.__permission_manager, instance_id, instance_name, instance_folder)
+        self.__instances.append(instance)
+
+        return instance
 
     def __generate_folder(self, instance_name: str) -> str:
         return f"{self.__instance_folder}{instance_name}/"
@@ -34,9 +37,6 @@ class InstanceManager(Database, Api):
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
                              "name CHAR(128) UNIQUE)")
 
-        self.__permission_manager = PermissionManager()
-        self.__permission_manager.start()
-
     def create_instance(self, name: str, instance_type: str):
         if not (self._connector and self._cursor):
             return
@@ -50,12 +50,13 @@ class InstanceManager(Database, Api):
         instance_id = self._cursor.fetchone()[0]
         instance_folder = self.__generate_folder(name)
 
-        instance = ServerInstance(self.__permission_manager, instance_id, name, instance_folder)
-
-        self.__instances.append(instance)
+        self.__load_instance(instance_id, name, instance_folder)
 
     def load_folder(self, instance_folder: str):
         self.__instance_folder = instance_folder
+
+    def load_permission_manager(self, permission_manager: PermissionManager):
+        self.__permission_manager = permission_manager
 
     def load_instances(self):
         if not (self._connector and self._cursor):
@@ -69,9 +70,7 @@ class InstanceManager(Database, Api):
             instance_name = instance_data[1]
             instance_folder = self.__generate_folder(instance_name)
 
-            instance = ServerInstance(self.__permission_manager, instance_id, instance_name, instance_folder)
-
-            self.__instances.append(instance)
+            self.__load_instance(instance_id, instance_name, instance_folder)
 
     def request(self, method_name: str, instance_data: Dict) -> Optional[Dict]:
         instance_id = int(instance_data["instance_id"])

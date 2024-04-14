@@ -1,4 +1,5 @@
 from database_utils import Database
+from .user_manager import UserManager
 
 SYSTEM_ID = -100
 
@@ -7,6 +8,8 @@ PERMISSION_START_STOP = "permission_start_stop"
 
 
 class PermissionManager(Database):
+    __user_manager: UserManager
+
     def start(self):
         self._connector = self._connect("ksm_database")
         self._cursor = self._connector.cursor()
@@ -29,8 +32,15 @@ class PermissionManager(Database):
         self._cursor.execute("INSERT INTO permissions (user_id, instance_id) VALUES (%s, %s)", (user_id, instance_id))
         self._connector.commit()
 
+    def load_user_manager(self, user_manager: UserManager):
+        self.__user_manager = user_manager
+
     def check_permission(self, user_id: int, instance_id: int, permission_type: str) -> bool:
         if user_id == SYSTEM_ID:
+            return True
+
+        user = self.__user_manager.get_user_by_id(user_id)
+        if user and user.is_administrator:
             return True
 
         if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
