@@ -1,8 +1,8 @@
 from server import InstanceManager
-from user import SYSTEM_ID, UserManager, PermissionManager, UserAuthorization
+from user import UserManager, PermissionManager, UserAuthorization, User
 from .settings_engine import EngineSettings
 from settings import SettingsCreator
-from utils import ResponseBuilder
+from utils import ResponseBuilder, HttpStatus
 from typing import Dict
 
 
@@ -32,44 +32,55 @@ class Engine:
 
         self.__user_authorization = UserAuthorization(self.__user_manager)
 
-    def __check_password(self, data: Dict) -> bool:
+    def __check_engine_password(self, data: Dict) -> bool:
         password = data["password"]
 
         return self.__engine_settings.check_password(password)
 
-    def __check_administrator(self, data: Dict) -> bool:
-        user_id = data["user_id"] if "user_id" in data else None
-        user = self.__user_manager.get_user_by_id(user_id)
+    def __get_user_by_key(self, data: Dict) -> User:
+        user = self.__user_authorization.get_authorized_user(data["user_key"])
 
-        return user_id == SYSTEM_ID or user and user.is_administrator
+        return user
 
     def instance_call(self, method_name: str, data: Dict) -> Dict:
-        if not self.__check_password(data):
-            return ResponseBuilder().status(200).message("Forbidden!").build()
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        user = self.__get_user_by_key(data)
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
         instance_data = data["instance_data"]
+        instance_data["user_id"] = user.user_id
         response = self.__instance_manager.request(method_name, instance_data)
 
         return response
 
     def instance_create(self, data: Dict) -> Dict:
-        if not self.__check_password(data):
-            return ResponseBuilder().status(403).message("Forbidden!").build()
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        user = self.__get_user_by_key(data)
+        if user is None or not user.is_administrator:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
         instance_data = data["instance_data"]
-        if not self.__check_administrator(instance_data):
-            return ResponseBuilder().status(403).message("Forbidden!").build()
+        instance_data["user_id"] = user.user_id
 
         self.__instance_manager.create_instance(instance_data["name"], instance_data["instance_type"])
 
-        return ResponseBuilder().status(200).message("Instance has been successfully created!").build()
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("Instance has been successfully created!")
+                .build())
 
     def user_create(self, data: Dict) -> Dict:
-        if not self.__check_password(data):
-            return ResponseBuilder().status(403).message("Forbidden!").build()
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
-        if not self.__check_administrator(data):
-            return ResponseBuilder().status(403).message("Forbidden!").build()
+        user = self.__get_user_by_key(data)
+        if not user.is_administrator:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
         user_data = data["user_data"]
         name = user_data["name"]
@@ -78,16 +89,27 @@ class Engine:
 
         self.__user_manager.create_user(name, password, administrator)
 
-        return ResponseBuilder().status(200).message("User has been created successfully!").build()
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("User has been created successfully!")
+                .build())
 
     def authorize_user(self, data: Dict) -> Dict:
-        if not self.__check_password(data):
-            return ResponseBuilder().status(403).message("Forbidden!").build()
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
         user_data = data["user_data"]
 
         key = self.__user_authorization.authorize_user(user_data["name"], user_data["password"])
         if not key:
-            return ResponseBuilder().status(403).message("User not found!").build()
+            return ResponseBuilder().status(HttpStatus.HTTP_UNAUTHORIZED.value).message("User not found!").build()
 
-        return ResponseBuilder().status(200).message("User has been authorized!").addition_data("user_data", {"key": key}).build()
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("User has been authorized!")
+                .addition_data("user_data", {"key": key})
+                .build())
+
+    @property
+    def port(self) -> int:
+        return self.__engine_settings.port

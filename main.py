@@ -41,6 +41,7 @@ def create_user():
 
     return jsonify(response)
 
+
 @app.route("/api/user/authorization/", methods=["POST"])
 def authorization():
     if request.method != "POST":
@@ -54,3 +55,5 @@ def authorization():
 
 if __name__ == "__main__":
     app.run(port=5000)
+
+
