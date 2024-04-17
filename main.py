@@ -41,6 +41,16 @@ def create_user():
 
     return jsonify(response)
 
+@app.route("/api/user/authorization/", methods=["POST"])
+def authorization():
+    if request.method != "POST":
+        return ResponseBuilder().status(401).message("Bad request!").build()
+
+    data = request.json
+    response = engine.authorize_user(data)
+
+    return response
+
 
 if __name__ == "__main__":
     app.run(port=5000)

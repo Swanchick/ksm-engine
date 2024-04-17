@@ -3,6 +3,7 @@ from .user_manager import UserManager
 
 SYSTEM_ID = -100
 
+PERMISSION_VIEW = "permission_view"
 PERMISSION_CONSOLE = "permission_console"
 PERMISSION_START_STOP = "permission_start_stop"
 

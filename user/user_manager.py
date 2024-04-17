@@ -13,22 +13,6 @@ class UserManager(Database):
                              "password text,"
                              "administrator BOOLEAN DEFAULT false)")
 
-    def get_user_by_id(self, user_id: int) -> Optional[User]:
-        if user_id is None:
-            return None
-
-        if not (self._connector and self._cursor):
-            return
-
-        self._cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-
-        user_data = self._cursor.fetchone()
-        if not user_data:
-            return
-
-        user = User(user_data[1], user_data[2], user_data[3], user_data[1], False)
-        return user
-
     def create_user(self, name: str, password: str, administrator: bool):
         if not (self._connector and self._cursor):
             return
@@ -55,3 +39,38 @@ class UserManager(Database):
 
         return users
 
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        if user_id is None:
+            return
+
+        if not (self._connector and self._cursor):
+            return
+
+        self._cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+
+        user_data = self._cursor.fetchone()
+        if not user_data:
+            return
+
+        user = User(user_data[1], user_data[2], user_data[3], user_data[0], False)
+
+        return user
+
+    def get_user_by_name(self, name: str) -> Optional[User]:
+        if name is None:
+            return
+
+        if not (self._connector and self._cursor):
+            return
+
+        self._cursor.execute("SELECT * FROM users WHERE name = %s", (name, ))
+
+        user_data = self._cursor.fetchone()
+        if not user_data:
+            return
+
+        print(user_data)
+
+        user = User(user_data[1], user_data[2], user_data[3], user_data[0], False)
+
+        return user
