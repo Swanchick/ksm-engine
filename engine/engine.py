@@ -74,6 +74,11 @@ class Engine:
                 .message("Instance has been successfully created!")
                 .build())
 
+    def get_instances(self, data: Dict) -> Dict:
+        instances = self.__instance_manager.instances
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).build()
+
     def user_create(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
