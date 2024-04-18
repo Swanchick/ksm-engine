@@ -1,6 +1,6 @@
 from database_utils import Database
-from .user_manager import UserManager
-from .permissions import Permissions
+from user import UserManager
+from permission.permissions import Permissions
 from typing import List
 
 

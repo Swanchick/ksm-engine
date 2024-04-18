@@ -31,7 +31,7 @@ class ApiCaller(ABC):
     def unregister_all(self):
         self._callbacks = []
 
-    def call(self, name, *args, **kwargs):
+    def call(self, name: str, user_id: int, permission, *args, **kwargs):
         for callback in self._callbacks:
             if callback.name == name:
                 return callback.call(*args, **kwargs)
