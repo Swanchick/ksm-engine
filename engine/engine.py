@@ -1,5 +1,6 @@
 from server import InstanceManager
-from user import UserManager, PermissionManager, UserAuthorization, User
+from permission import PermissionManager, Permissions
+from user import UserManager, UserAuthorization, User
 from .settings_engine import EngineSettings
 from settings import SettingsCreator
 from utils import ResponseBuilder, HttpStatus

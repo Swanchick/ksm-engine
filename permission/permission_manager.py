@@ -57,11 +57,10 @@ class PermissionManager(Database):
     def __check_permission(self, permission: int, permission_to_check: int) -> bool:
         permissions = self.__break_into_permissions(permission)
 
-        for p in permissions:
-            if p & permission_to_check != 0:
-                return True
+        print(permissions)
+        print(permission_to_check)
 
-        return False
+        return permission_to_check in permissions
 
     def load_user_manager(self, user_manager: UserManager):
         self.__user_manager = user_manager

@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from user import PermissionManager
+from permission import PermissionManager
 from .instance import ServerInstance
 from api import Api
 from database_utils import Database
@@ -81,9 +81,7 @@ class InstanceManager(Database, Api):
 
         args = instance_data["args"] if "args" in instance_data else []
 
-        final_args = [instance_data["user_id"]] + args
-
-        output_data = instance.call(method_name, *final_args)
+        output_data = instance.call(method_name, instance_data["user_id"], *args)
 
         return output_data
 
