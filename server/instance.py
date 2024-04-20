@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE
-from typing import List, Optional
+from typing import List, Optional, Dict
 from permission import PermissionManager, Permissions
 from .state import ServerState
 from .output import ServerOutput, OutputType
@@ -46,6 +46,8 @@ class ServerInstance(InstanceCaller):
         self._register("server_stop", self.stop, self.__id, Permissions.INSTANCE_START_STOP)
         self._register("get_last_output", self.get_last_output, self.__id, Permissions.INSTANCE_CONSOLE)
         self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
+        self._register("create_folder", self.create_folder, self.__id, Permissions.FILES_CREATE)
+        self._register("delete_folder", self.delete_folder, self.__id, Permissions.FILES_REMOVE)
 
     def __monitor_server(self):
         if not self.__process:
@@ -148,7 +150,7 @@ class ServerInstance(InstanceCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
 
-    def get_folders(self, *folders):
+    def get_folders(self, *folders) -> Dict:
         files = self.__folder_system.open_folder(*folders)
 
         if files is None:
@@ -159,11 +161,28 @@ class ServerInstance(InstanceCaller):
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
-                .message("Folders")
+                .message("Your folders sir")
                 .addition_data("folders", files)
                 .build())
 
+    def create_folder(self, *folders) -> Dict:
+        self.__folder_system.create_folder(*folders)
 
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("Folder has been created successfully!")
+                .build())
+
+    def delete_folder(self, *folders) -> Dict:
+        self.__folder_system.delete_folder(*folders)
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("Folder has been successfully deleted!")
+                .build())
+
+    def open_file(self):
+        pass
 
     @property
     def instance_state(self) -> ServerState:
