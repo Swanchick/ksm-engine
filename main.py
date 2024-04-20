@@ -75,5 +75,13 @@ def get_users():
     return jsonify(response)
 
 
+@app.route("/api/pong/")
+def ping():
+    if request != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    return jsonify(ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Pong!").build())
+
+
 if __name__ == "__main__":
     app.run(host=engine.ip, port=engine.port)
