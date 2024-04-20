@@ -76,9 +76,31 @@ class Engine:
                 .build())
 
     def get_instances(self, data: Dict) -> Dict:
-        instances = self.__instance_manager.instances
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).build()
+        instances = self.__instance_manager.instances
+        instances_out = []
+
+        user = self.__get_user_by_key(data)
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        user_id = user.user_id
+
+        for instance in instances:
+            instance_id = instance.instance_id
+
+            if not (self.__permission_manager.check_permission(user_id, instance_id, Permissions.INSTANCE_VIEW)
+                    or user.is_administrator):
+                continue
+
+            instances_out.append(instance.dict)
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("instances", instances_out)
+                .build())
 
     def user_create(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):

@@ -222,3 +222,7 @@ class ServerInstance(InstanceCaller):
     @property
     def instance_id(self):
         return self.__id
+
+    @property
+    def dict(self) -> dict:
+        return {"instance_name": self.__name, "instance_id": self.__id, "instance_state": self.__server_state.value}

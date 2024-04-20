@@ -36,6 +36,9 @@ def get_instances():
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
     data = request.json
+    response = engine.get_instances(data)
+
+    return jsonify(response)
 
 
 @app.route("/api/user/create", methods=["POST"])
