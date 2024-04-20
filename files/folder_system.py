@@ -1,6 +1,6 @@
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Dict
 from os import listdir as os_listdir
-from os.path import isfile, isdir, exists
+from os.path import isfile, isdir
 from .file_unit import FileUnit
 from .file_type import FileType
 from os import remove as os_remove
@@ -27,7 +27,7 @@ class FolderSystem:
 
         return True
 
-    def open_folder(self, *folder_path: str) -> Optional[List[FileUnit]]:
+    def open_folder(self, *folder_path: str) -> Optional[List[Dict]]:
         if not self.__check_folders_access(folder_path):
             return
 
@@ -43,11 +43,11 @@ class FolderSystem:
             current_path = path + file
 
             if isfile(current_path):
-                files_out.append(FileUnit(current_path, FileType.FILE))
+                files_out.append(FileUnit(current_path, FileType.FILE).dict)
             elif isdir(current_path):
-                files_out.append(FileUnit(current_path, FileType.FOLDER))
+                files_out.append(FileUnit(current_path, FileType.FOLDER).dict)
 
-        files_out.sort(key=lambda x: x.file_type == FileType.FOLDER.value)
+        files_out.sort(key=lambda x: x["file_type"] == FileType.FOLDER.value)
 
         return files_out
 
