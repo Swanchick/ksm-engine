@@ -148,7 +148,7 @@ class ServerInstance(InstanceCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
 
-    def get_folders(self, folders: List[str]):
+    def get_folders(self, *folders):
         files = self.__folder_system.open_folder(*folders)
 
         if files is None:
@@ -162,6 +162,8 @@ class ServerInstance(InstanceCaller):
                 .message("Folders")
                 .addition_data("folders", files)
                 .build())
+
+
 
     @property
     def instance_state(self) -> ServerState:

@@ -69,6 +69,11 @@ class PermissionManager(Database):
         if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
             return False
 
+        user = self.__user_manager.get_user_by_id(user_id)
+
+        if user is not None and user.is_administrator:
+            return True
+
         permission = self.__get_permission(user_id, instance_id)
 
         return self.__check_permission(permission, permission_type.value)
