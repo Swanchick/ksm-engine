@@ -8,7 +8,7 @@ class Permissions(Enum):
     INSTANCE_SHOW_STATS = 8
     INSTANCE_USER_EDIT = 16
     FILES_SHOW = 32
-    FILES_EDIT = 64
-    FILES_VIEW = 128
-    FILES_CREATE = 256
+    FILES_EDIT_VIEW = 64
+    FILES_CREATE = 128
+    FILES_REMOVE = 256
     
