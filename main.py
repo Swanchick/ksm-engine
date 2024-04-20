@@ -38,10 +38,6 @@ def get_instances():
     data = request.json
 
 
-
-
-
-
 @app.route("/api/user/create", methods=["POST"])
 def create_user():
     if request.method != "POST":
@@ -67,5 +63,3 @@ def authorization():
 
 if __name__ == "__main__":
     app.run(port=5000)
-
-
