@@ -138,6 +138,18 @@ class Engine:
                 .addition_data("user_data", {"key": key})
                 .build())
 
+    def get_users(self, data: Dict) -> Dict:
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        users = self.__user_manager.get_users()
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
+
     @property
     def port(self) -> int:
         return self.__engine_settings.port
+
+    @property
+    def ip(self) -> str:
+        return self.__engine_settings.ip

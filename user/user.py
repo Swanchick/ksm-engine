@@ -33,3 +33,7 @@ class User:
     @property
     def is_administrator(self):
         return self.__administrator
+
+    @property
+    def dict(self) -> dict:
+        return {"user_id": self.__user_id, "name": self.__name, "is_administrator": self.__administrator}

@@ -1,6 +1,6 @@
 from database_utils import Database
 from .user import User
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class UserManager(Database):
@@ -25,7 +25,7 @@ class UserManager(Database):
 
         return user
 
-    def get_users(self) -> Optional[List[User]]:
+    def get_users(self) -> Optional[List[Dict]]:
         if not (self._connector and self._cursor):
             return
 
@@ -35,7 +35,7 @@ class UserManager(Database):
 
         for user_data in self._cursor.fetchall():
             user = User(user_data[1], user_data[2], user_data[3], user_data[0], False)
-            users.append(user)
+            users.append(user.dict)
 
         return users
 

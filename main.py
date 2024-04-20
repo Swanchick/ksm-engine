@@ -64,5 +64,16 @@ def authorization():
     return response
 
 
+@app.route("/api/user/get/", methods=["POST"])
+def get_users():
+    if request.method != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    data = request.json
+    response = engine.get_users(data)
+
+    return jsonify(response)
+
+
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(host=engine.ip, port=engine.port)
