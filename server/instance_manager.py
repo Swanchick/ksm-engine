@@ -80,8 +80,9 @@ class InstanceManager(Database, Api):
             return ResponseBuilder().status(500).message("Instance not found").build()
 
         args = instance_data["args"] if "args" in instance_data else []
+        kwargs = instance_data["kwargs"] if "kwargs" in instance_data else {}
 
-        output_data = instance.call(method_name, instance_data["user_id"], *args)
+        output_data = instance.call(method_name, instance_data["user_id"], *args, **kwargs)
 
         return output_data
 

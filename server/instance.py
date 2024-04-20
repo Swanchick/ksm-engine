@@ -8,6 +8,7 @@ from .settings_instance import InstanceSettings
 from settings import SettingsCreator
 from api import InstanceCaller
 from utils import ResponseBuilder, HttpStatus
+from files import FolderSystem, FileSystem
 
 SETTING_FILE = "ksm_settings.json"
 
@@ -22,6 +23,9 @@ class ServerInstance(InstanceCaller):
     __output: List[ServerOutput]
     __server_state: ServerState
 
+    __folder_system: FolderSystem
+    __file_system: FileSystem
+
     def __init__(self, permission_manager: PermissionManager, instance_id: int, name: str, instance_folder: str):
         super().__init__(permission_manager)
 
@@ -32,12 +36,16 @@ class ServerInstance(InstanceCaller):
         self.__server_process = True
         self.__server_state = ServerState.STOP
 
+        self.__folder_system = FolderSystem(self.__folder)
+        self.__file_system = FileSystem(self.__folder)
+
         self.__init_api()
 
     def __init_api(self):
         self._register("server_start", self.start, self.__id, Permissions.INSTANCE_START_STOP)
         self._register("server_stop", self.stop, self.__id, Permissions.INSTANCE_START_STOP)
         self._register("get_last_output", self.get_last_output, self.__id, Permissions.INSTANCE_CONSOLE)
+        self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
 
     def __monitor_server(self):
         if not self.__process:
@@ -139,6 +147,21 @@ class ServerInstance(InstanceCaller):
         }
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
+
+    def get_folders(self, folders: List[str]):
+        files = self.__folder_system.open_folder(*folders)
+
+        if files is None:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_NOT_FOUND.value)
+                    .message("Folder not found!")
+                    .build())
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("Folders")
+                .addition_data("folders", files)
+                .build())
 
     @property
     def instance_state(self) -> ServerState:
