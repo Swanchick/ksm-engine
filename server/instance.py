@@ -48,6 +48,10 @@ class ServerInstance(InstanceCaller):
         self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
         self._register("create_folder", self.create_folder, self.__id, Permissions.FILES_CREATE)
         self._register("delete_folder", self.delete_folder, self.__id, Permissions.FILES_REMOVE)
+        self._register("open_file", self.open_file, self.__id, Permissions.FILES_EDIT_VIEW)
+        self._register("create_file", self.create_file, self.__id, Permissions.FILES_CREATE)
+        self._register("delete_file", self.delete_file, self.__id, Permissions.FILES_REMOVE)
+        self._register("write_file", self.write_file, self.__id, Permissions.FILES_EDIT_VIEW)
 
     def __monitor_server(self):
         if not self.__process:
@@ -181,8 +185,27 @@ class ServerInstance(InstanceCaller):
                 .message("Folder has been successfully deleted!")
                 .build())
 
-    def open_file(self):
-        pass
+    def open_file(self, file_name, *folders) -> Dict:
+        data = self.__file_system.open_file(file_name, *folders)
+        if data is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("File not found!").build()
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message(data).build()
+
+    def create_file(self, file_name, *folders) -> Dict:
+        self.__file_system.create_file(file_name, *folders)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been created!").build()
+
+    def delete_file(self, file_name, *folders) -> Dict:
+        self.__file_system.delete_file(file_name, *folders)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been deleted!").build()
+
+    def write_file(self, file_name, data, *folders) -> Dict:
+        self.__file_system.write_file(file_name, data, *folders)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been changed!").build()
 
     @property
     def instance_state(self) -> ServerState:
