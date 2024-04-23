@@ -45,7 +45,11 @@ class ServerInstance(InstanceCaller):
     def __init_api(self):
         self._register("server_start", self.start, self.__id, Permissions.INSTANCE_START_STOP)
         self._register("server_stop", self.stop, self.__id, Permissions.INSTANCE_START_STOP)
+
+        self._register("server_send", self.send, self.__id, Permissions.INSTANCE_CONSOLE)
         self._register("get_last_output", self.get_last_output, self.__id, Permissions.INSTANCE_CONSOLE)
+        self._register("get_output", self.get_output, self.__id, Permissions.INSTANCE_CONSOLE)
+
         self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
         self._register("create_folder", self.create_folder, self.__id, Permissions.FILES_CREATE)
         self._register("delete_folder", self.delete_folder, self.__id, Permissions.FILES_REMOVE)
@@ -129,11 +133,16 @@ class ServerInstance(InstanceCaller):
                 .message("Server has been successfully started.")
                 .build())
 
-    def send(self, request: str):
+    def send(self, request: str) -> Dict:
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
 
-    def stop(self):
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .message("Message has been sent.")
+                .build())
+
+    def stop(self) -> Dict:
         if not self.__process:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
@@ -157,12 +166,22 @@ class ServerInstance(InstanceCaller):
                 .message("Server has been successfully stopped.")
                 .build())
 
-    def get_last_output(self):
+    def get_last_output(self) -> Dict:
         data = {
             "output": self.__output[-1].message if self.__output else None
         }
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
+
+    def get_output(self) -> Dict:
+        outputs = []
+        for output in self.__output:
+            outputs.append(output.message)
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("instance", {"output": outputs})
+                .build())
 
     def get_folders(self, *folders) -> Dict:
         files = self.__folder_system.open_folder(*folders)
