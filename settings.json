@@ -3,7 +3,7 @@
     "ip": "127.0.0.1",
     "port": 52146,
     "name": "first_engine",
-    "server_instances_folder": "E:/Kyryls Server Manager/ksm-instances/",
+    "server_instances_folder": "E:/ksm/ksm-instances/",
     "password": "12345678"
   },
   "database": {

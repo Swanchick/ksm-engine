@@ -21,3 +21,4 @@ idna~=3.6
 pycparser~=2.22
 wrapt~=1.16.0
 Flask~=3.0.2
+psutil

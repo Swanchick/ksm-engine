@@ -9,6 +9,7 @@ from settings import SettingsCreator
 from api import InstanceCaller
 from utils import ResponseBuilder, HttpStatus
 from files import FolderSystem, FileSystem
+from psutil import Process
 
 SETTING_FILE = "ksm_settings.json"
 
@@ -108,8 +109,9 @@ class ServerInstance(InstanceCaller):
 
         self.__setup()
 
-        command = [self.__settings.program, f"{self.__folder}{self.__settings.script}"] + self.__settings.arguments
-        self.__process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        command = [self.__settings.program] + self.__settings.arguments
+        self.__process = Popen(command, cwd=self.__folder, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+        print(self.__process.pid)
         self.__server_state = ServerState.START
 
         thread_monitor_server = Thread(target=self.__monitor_server)
@@ -138,7 +140,15 @@ class ServerInstance(InstanceCaller):
                     .message("Server is not started")
                     .build())
 
-        self.__process.terminate()
+        process = Process(self.__process.pid)
+        children_precesses = process.children(recursive=True)
+
+        for child in children_precesses:
+            child.terminate()
+
+        process.terminate()
+
+        self.__server_state = ServerState.STOP
 
         print(f"Server Instance: {self.__name} has been stopped.")
 
