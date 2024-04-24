@@ -41,6 +41,17 @@ def get_instances():
     return jsonify(response)
 
 
+@app.route("/api/instance/get_instance/", methods=["POST"])
+def get_instance_data():
+    if request.method != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    data = request.json
+    response = engine.get_instance(data)
+
+    return jsonify(response)
+
+
 @app.route("/api/user/create", methods=["POST"])
 def create_user():
     if request.method != "POST":

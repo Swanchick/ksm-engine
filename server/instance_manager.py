@@ -23,7 +23,7 @@ class InstanceManager(Database, Api):
     def __generate_folder(self, instance_name: str) -> str:
         return f"{self.__instance_folder}{instance_name}/"
 
-    def __get_instance_by_id(self, instance_id: int) -> Optional[ServerInstance]:
+    def get_instance_by_id(self, instance_id: int) -> Optional[ServerInstance]:
         for instance in self.__instances:
             if instance.instance_id == instance_id:
                 return instance
@@ -74,7 +74,7 @@ class InstanceManager(Database, Api):
 
     def request(self, method_name: str, instance_data: Dict) -> Optional[Dict]:
         instance_id = int(instance_data["instance_id"])
-        instance = self.__get_instance_by_id(instance_id)
+        instance = self.get_instance_by_id(instance_id)
 
         if not instance:
             return ResponseBuilder().status(500).message("Instance not found").build()

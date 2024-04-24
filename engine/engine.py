@@ -75,16 +75,34 @@ class Engine:
                 .message("Instance has been successfully created!")
                 .build())
 
-    def get_instances(self, data: Dict) -> Dict:
+    def get_instance(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instances = self.__instance_manager.instances
-        instances_out = []
 
         user = self.__get_user_by_key(data)
         if user is None:
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        instance_data = data["instance_data"]
+        instance = self.__instance_manager.get_instance_by_id(instance_data["instance_id"])
+        if instance is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Instance not found!").build()
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("instance_data", instance.dict)
+                .build())
+
+    def get_instances(self, data: Dict) -> Dict:
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        user = self.__get_user_by_key(data)
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        instances = self.__instance_manager.instances
+        instances_out = []
 
         user_id = user.user_id
 
