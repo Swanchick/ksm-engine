@@ -114,14 +114,6 @@ class ServerInstance(InstanceCaller):
                     .message("Server is already started")
                     .build())
 
-        if self.__settings is None:
-            logging.error("Settings not set")
-
-            return (ResponseBuilder()
-                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
-                    .message("Server settings not set")
-                    .build())
-
         self.__setup()
 
         command = [self.__settings.program] + self.__settings.arguments
