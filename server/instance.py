@@ -1,3 +1,4 @@
+import logging
 from subprocess import Popen, PIPE
 from typing import List, Optional, Dict
 from permission import PermissionManager, Permissions
@@ -106,16 +107,25 @@ class ServerInstance(InstanceCaller):
 
     def start(self):
         if self.__server_state == ServerState.START:
+            logging.error("Server already started")
+
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Server is already started")
+                    .build())
+
+        if self.__settings is None:
+            logging.error("Settings not set")
+
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                    .message("Server settings not set")
                     .build())
 
         self.__setup()
 
         command = [self.__settings.program] + self.__settings.arguments
         self.__process = Popen(command, cwd=self.__folder, stdout=PIPE, stdin=PIPE, stderr=PIPE)
-        print(self.__process.pid)
         self.__server_state = ServerState.START
 
         thread_monitor_server = Thread(target=self.__monitor_server)
@@ -126,7 +136,7 @@ class ServerInstance(InstanceCaller):
         thread_get_output.start()
         thread_get_err.start()
 
-        print(f"Server Instance: {self.__name} has been started.")
+        logging.info(f"Server Instance: {self.__name} has been started with pid {self.__process.pid}.")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
@@ -136,6 +146,8 @@ class ServerInstance(InstanceCaller):
     def send(self, request: str) -> Dict:
         self.__process.stdin.write(f"{request}\n".encode("utf-8"))
         self.__process.stdin.flush()
+
+        logging.info(f"Client has sent command \"{request}\" to process.")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
@@ -149,17 +161,23 @@ class ServerInstance(InstanceCaller):
                     .message("Server is not started")
                     .build())
 
-        process = Process(self.__process.pid)
-        children_precesses = process.children(recursive=True)
+        try:
+            process = Process(self.__process.pid)
+            children_precesses = process.children(recursive=True)
 
-        for child in children_precesses:
-            child.terminate()
+            for child in children_precesses:
+                child.terminate()
 
-        process.terminate()
+            process.terminate()
+
+            logging.info(f"Server Instance: {self.__name} has been stopped.")
+        except Exception as e:
+            logging.error(f"Server Instance: {self.__name} does not have any process.")
+
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message(e).build()
 
         self.__server_state = ServerState.STOP
-
-        print(f"Server Instance: {self.__name} has been stopped.")
+        self.__output = []
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
@@ -171,12 +189,16 @@ class ServerInstance(InstanceCaller):
             "output": self.__output[-1].message if self.__output else None
         }
 
+        logging.info("Client has received last output.")
+
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
 
     def get_output(self) -> Dict:
         outputs = []
         for output in self.__output:
             outputs.append(output.message)
+
+        logging.info("Client has received output.")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
