@@ -7,7 +7,7 @@ engine = Engine()
 app = Flask(__name__)
 
 
-@app.route("/api/instance/call/<method_name>", methods=["POST"])
+@app.route("/api/instance/call/<method_name>/", methods=["POST"])
 def instance_requests(method_name: str):
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
@@ -18,7 +18,7 @@ def instance_requests(method_name: str):
     return jsonify(response)
 
 
-@app.route("/api/instance/create", methods=["POST"])
+@app.route("/api/instance/create/", methods=["POST"])
 def create_instance():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
@@ -52,7 +52,7 @@ def get_instance_data():
     return jsonify(response)
 
 
-@app.route("/api/user/create", methods=["POST"])
+@app.route("/api/user/create/", methods=["POST"])
 def create_user():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
