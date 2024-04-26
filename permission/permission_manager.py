@@ -86,19 +86,12 @@ class PermissionManager(Database):
         self.__saved_permissions.remove(saved_permission)
 
     def check_permission(self, user_id: int, instance_id: int, permission_type: Permissions) -> bool:
-        print(self.__saved_permissions)
-
         if self.__is_saved_permission_exists(user_id, instance_id):
             saved_permission = self.__get_saved_permission(user_id, instance_id)
-
-            print("Have used a saved permission")
-
             if saved_permission.is_administrator:
-                print(":D")
                 return True
 
             if self.__check_permission(saved_permission.permission, permission_type.value):
-                print(":D")
                 return True
 
         if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
