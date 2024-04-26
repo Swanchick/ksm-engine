@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 
 @app.route("/api/instance/call/<method_name>/", methods=["POST"])
-def instance_requests(method_name: str):
+async def instance_requests(method_name: str):
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -19,7 +19,7 @@ def instance_requests(method_name: str):
 
 
 @app.route("/api/instance/create/", methods=["POST"])
-def create_instance():
+async def create_instance():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -31,7 +31,7 @@ def create_instance():
 
 
 @app.route("/api/instance/get/", methods=["POST"])
-def get_instances():
+async def get_instances():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -42,7 +42,7 @@ def get_instances():
 
 
 @app.route("/api/instance/get_instance/", methods=["POST"])
-def get_instance_data():
+async def get_instance_data():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -53,7 +53,7 @@ def get_instance_data():
 
 
 @app.route("/api/user/create/", methods=["POST"])
-def create_user():
+async def create_user():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -65,7 +65,7 @@ def create_user():
 
 
 @app.route("/api/user/authorization/", methods=["POST"])
-def authorization():
+async def authorization():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -76,7 +76,7 @@ def authorization():
 
 
 @app.route("/api/user/get/", methods=["POST"])
-def get_users():
+async def get_users():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
@@ -87,7 +87,7 @@ def get_users():
 
 
 @app.route("/api/pong/")
-def ping():
+async def ping():
     if request != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
