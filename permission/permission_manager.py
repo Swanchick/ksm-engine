@@ -1,7 +1,7 @@
 from database_utils import Database
 from user import UserManager
 from permission.permissions import Permissions
-from typing import List, Optional
+from typing import List, Optional, Dict
 from .saved_permission import SavedPermission
 
 
@@ -58,6 +58,12 @@ class PermissionManager(Database):
 
         return out
 
+    @staticmethod
+    def __get_permission_type(value: int) -> Permissions:
+        for permission in Permissions:
+            if permission.value == value:
+                return permission
+
     def __check_permission(self, permission: int, permission_to_check: int) -> bool:
         permissions = self.__break_into_permissions(permission)
 
@@ -99,7 +105,10 @@ class PermissionManager(Database):
 
         user = self.__user_manager.get_user_by_id(user_id)
 
-        if user is not None and user.is_administrator:
+        if user is None:
+            return False
+
+        if user.is_administrator:
             saved_permission = SavedPermission(user_id, instance_id, is_administrator=True)
             self.__saved_permissions.append(saved_permission)
 
@@ -114,6 +123,33 @@ class PermissionManager(Database):
             return True
 
         return False
+
+    def get_all_permissions_from_instance(self, instance_id: int) -> List[Dict]:
+        if not (self._connector and self._cursor):
+            return
+
+        self._cursor.execute("SELECT * "
+                             "FROM permissions "
+                             "WHERE instance_id = %s",
+                             (instance_id, ))
+
+        data = self._cursor.fetchall()
+        output_data = []
+
+        for permissions in data:
+            broken_permission = self.__break_into_permissions(permissions[2])
+            permission_out = []
+
+            for permission in broken_permission:
+                permission_type = self.__get_permission_type(permission)
+                if permission_type is None:
+                    continue
+
+                permission_out.append({permission_type.name: permission})
+
+            output_data.append({'user_id': permissions[0], "permissions": permission_out})
+
+        return output_data
 
     def add_permission(self, user_id: int, instance_id: int, permission_type: Permissions):
         if not (self._connector and self._cursor):

@@ -164,6 +164,20 @@ class Engine:
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
 
+    def get_permissions(self, data: Dict) -> Dict:
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        permissions = []
+
+        for permission in Permissions:
+            permissions.append({permission.name: permission.value})
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("permissions", permissions)
+                .build())
+
     @property
     def port(self) -> int:
         return self.__engine_settings.port

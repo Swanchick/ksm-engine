@@ -59,6 +59,8 @@ class ServerInstance(InstanceCaller):
         self._register("delete_file", self.delete_file, self.__id, Permissions.FILES_REMOVE)
         self._register("write_file", self.write_file, self.__id, Permissions.FILES_EDIT_VIEW)
 
+        self._register("get_permissions", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
+
     def __monitor_server(self):
         if not self.__process:
             return
@@ -249,6 +251,17 @@ class ServerInstance(InstanceCaller):
         self.__file_system.write_file(file_name, data, *folders)
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been changed!").build()
+
+    def get_permission(self) -> Dict:
+        permissions = self._permission_manager.get_all_permissions_from_instance(self.__id)
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("users", permissions)
+                .build())
+
+    def add_permission(self, user_id: int, permission_type: int):
+        pass
 
     @property
     def instance_state(self) -> ServerState:

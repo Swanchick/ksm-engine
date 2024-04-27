@@ -86,6 +86,17 @@ async def get_users():
     return jsonify(response)
 
 
+@app.route("/api/permission/get/", methods=["POST"])
+async def get_permissions():
+    if request.method != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    data = request.json
+    response = engine.get_permissions(data)
+
+    return jsonify(response)
+
+
 @app.route("/api/pong/")
 async def ping():
     if request != "POST":
