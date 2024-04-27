@@ -60,6 +60,8 @@ class ServerInstance(InstanceCaller):
         self._register("write_file", self.write_file, self.__id, Permissions.FILES_EDIT_VIEW)
 
         self._register("get_permissions", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
+        self._register("add_permission", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
+        self._register("remove_permission", self.remove_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
 
     def __monitor_server(self):
         if not self.__process:
@@ -260,8 +262,15 @@ class ServerInstance(InstanceCaller):
                 .addition_data("users", permissions)
                 .build())
 
-    def add_permission(self, user_id: int, permission_type: int):
-        pass
+    def add_permission(self, user_id: int, permission_type: int) -> Dict:
+        self._permission_manager.add_permission(user_id, self.__id, permission_type)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been added!").build()
+
+    def remove_permission(self, user_id: int, permission_type: int) -> Dict:
+        self._permission_manager.remove_permission(user_id, self.__id, permission_type)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been removed!").build()
 
     @property
     def instance_state(self) -> ServerState:

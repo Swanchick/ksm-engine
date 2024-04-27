@@ -45,8 +45,8 @@ class PermissionManager(Database):
 
         return result[0]
 
-    @staticmethod
-    def __break_into_permissions(number) -> List[int]:
+    @classmethod
+    def __break_into_permissions(cls, number) -> List[int]:
         out = []
         current_power = 1
 
@@ -58,11 +58,15 @@ class PermissionManager(Database):
 
         return out
 
-    @staticmethod
-    def __get_permission_type(value: int) -> Permissions:
+    @classmethod
+    def __get_permission_type(cls, value: int) -> Permissions:
         for permission in Permissions:
             if permission.value == value:
                 return permission
+
+    @classmethod
+    def __permission_exists(cls, value: int):
+        return cls.__get_permission_type(value) is not None
 
     def __check_permission(self, permission: int, permission_to_check: int) -> bool:
         permissions = self.__break_into_permissions(permission)
@@ -124,7 +128,7 @@ class PermissionManager(Database):
 
         return False
 
-    def get_all_permissions_from_instance(self, instance_id: int) -> List[Dict]:
+    def get_all_permissions_from_instance(self, instance_id: int) -> Optional[List[Dict]]:
         if not (self._connector and self._cursor):
             return
 
@@ -151,7 +155,10 @@ class PermissionManager(Database):
 
         return output_data
 
-    def add_permission(self, user_id: int, instance_id: int, permission_type: Permissions):
+    def add_permission(self, user_id: int, instance_id: int, permission_to_check: int):
+        if not self.__permission_exists(permission_to_check):
+            return
+
         if not (self._connector and self._cursor):
             return
 
@@ -162,13 +169,16 @@ class PermissionManager(Database):
 
         permission = self.__get_permission(user_id, instance_id)
 
-        if self.__check_permission(permission, permission_type.value):
+        if self.__check_permission(permission, permission_to_check):
             return
 
-        permission += permission_type.value
+        permission += permission_to_check
         self.__update_permission(user_id, instance_id, permission)
 
-    def remove_permission(self, user_id: int, instance_id: int, permission_type: Permissions):
+    def remove_permission(self, user_id: int, instance_id: int, permission_to_check: int):
+        if not self.__permission_exists(permission_to_check):
+            return
+
         if not (self._connector and self._cursor):
             return
 
@@ -179,8 +189,8 @@ class PermissionManager(Database):
 
         permission = self.__get_permission(user_id, instance_id)
 
-        if not self.__check_permission(permission, permission_type.value):
+        if not self.__check_permission(permission, permission_to_check):
             return
 
-        permission -= permission_type.value
+        permission -= permission_to_check
         self.__update_permission(user_id, instance_id, permission)
