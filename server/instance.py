@@ -61,7 +61,7 @@ class ServerInstance(InstanceCaller):
         self._register("write_file", self.write_file, self.__id, Permissions.FILES_EDIT_VIEW)
 
         self._register("get_permissions", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
-        self._register("add_permission", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
+        self._register("add_permission", self.add_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
         self._register("remove_permission", self.remove_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
 
     def __monitor_server(self):
