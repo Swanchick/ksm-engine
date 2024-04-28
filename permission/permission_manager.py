@@ -1,5 +1,5 @@
 from database_utils import Database
-from user import UserManager
+from user import UserManager, user_manager
 from permission.permissions import Permissions
 from typing import List, Optional, Dict
 from .saved_permission import SavedPermission
@@ -142,6 +142,8 @@ class PermissionManager(Database):
 
         for permissions in data:
             broken_permission = self.__break_into_permissions(permissions[2])
+            user_id = permissions[0]
+            user = self.__user_manager.get_user_by_id(user_id)
             permission_out = []
 
             for permission in broken_permission:
@@ -151,7 +153,7 @@ class PermissionManager(Database):
 
                 permission_out.append({permission_type.name: permission})
 
-            output_data.append({'user_id': permissions[0], "permissions": permission_out})
+            output_data.append({'user': user.dict, "permissions": permission_out})
 
         return output_data
 
