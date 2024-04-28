@@ -118,13 +118,13 @@ class ServerInstance(InstanceCaller):
                     .message("Server is already started")
                     .build())
 
+        self.__setup()
+
         if self.__settings is None:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Settings not set")
                     .build())
-
-        self.__setup()
 
         command = [self.__settings.program] + self.__settings.arguments
         self.__process = Popen(command, cwd=self.__folder, stdout=PIPE, stdin=PIPE, stderr=PIPE)
