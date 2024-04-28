@@ -13,7 +13,7 @@ from files import FolderSystem, FileSystem
 from psutil import Process
 
 SETTING_FILE = "ksm_settings.json"
-OUTPUT_MAX = 100
+MAX_OUTPUT_MESSAGES = 100
 
 
 class ServerInstance(InstanceCaller):
@@ -79,7 +79,7 @@ class ServerInstance(InstanceCaller):
         output = ServerOutput(message, output_type)
         self.__output.append(output)
 
-        if len(self.__output) > OUTPUT_MAX:
+        if len(self.__output) > MAX_OUTPUT_MESSAGES:
             self.__output.pop(0)
 
     def __get_output(self):
