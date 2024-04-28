@@ -6,13 +6,14 @@ from .state import ServerState
 from .output import ServerOutput, OutputType
 from threading import Thread
 from .settings_instance import InstanceSettings
-from settings import SettingsCreator
+from settings import SettingsCreator, Settings
 from api import InstanceCaller
 from utils import ResponseBuilder, HttpStatus
 from files import FolderSystem, FileSystem
 from psutil import Process
 
 SETTING_FILE = "ksm_settings.json"
+OUTPUT_MAX = 100
 
 
 class ServerInstance(InstanceCaller):
@@ -37,6 +38,7 @@ class ServerInstance(InstanceCaller):
         self.__output = []
         self.__server_process = True
         self.__server_state = ServerState.STOP
+        self.__settings: Settings
 
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)
@@ -48,7 +50,6 @@ class ServerInstance(InstanceCaller):
         self._register("server_stop", self.stop, self.__id, Permissions.INSTANCE_START_STOP)
 
         self._register("server_send", self.send, self.__id, Permissions.INSTANCE_CONSOLE)
-        self._register("get_last_output", self.get_last_output, self.__id, Permissions.INSTANCE_CONSOLE)
         self._register("get_output", self.get_output, self.__id, Permissions.INSTANCE_CONSOLE)
 
         self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
@@ -78,8 +79,8 @@ class ServerInstance(InstanceCaller):
         output = ServerOutput(message, output_type)
         self.__output.append(output)
 
-        # To Do:
-        # Send this information to client
+        if len(self.__output) > OUTPUT_MAX:
+            self.__output.pop(0)
 
     def __get_output(self):
         if not self.__process:
@@ -106,8 +107,7 @@ class ServerInstance(InstanceCaller):
             self.__add_message(message, OutputType.ERR)
 
     def __setup(self):
-        self.__settings = (SettingsCreator(f"{self.__folder}{SETTING_FILE}")
-                           .settings("instance"))
+        self.__settings = SettingsCreator(f"{self.__folder}{SETTING_FILE}").settings("instance")
 
     def start(self):
         if self.__server_state == ServerState.START:
@@ -116,6 +116,12 @@ class ServerInstance(InstanceCaller):
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Server is already started")
+                    .build())
+
+        if self.__settings is None:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                    .message("Settings not set")
                     .build())
 
         self.__setup()
@@ -179,15 +185,6 @@ class ServerInstance(InstanceCaller):
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .message("Server has been successfully stopped.")
                 .build())
-
-    def get_last_output(self) -> Dict:
-        data = {
-            "output": self.__output[-1].message if self.__output else None
-        }
-
-        logging.info("Client has received last output.")
-
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", data).build()
 
     def get_output(self) -> Dict:
         outputs = []
