@@ -98,13 +98,14 @@ class PermissionManager(Database):
     def check_permission(self, user_id: int, instance_id: int, permission_type: Permissions) -> bool:
         if self.__is_saved_permission_exists(user_id, instance_id):
             saved_permission = self.__get_saved_permission(user_id, instance_id)
+
             if saved_permission.is_administrator:
                 return True
 
             if self.__check_permission(saved_permission.permission, permission_type.value):
                 return True
 
-        if not (self._connector and self._cursor and self.__row_exists(user_id, instance_id)):
+        if not (self._connector and self._cursor):
             return False
 
         user = self.__user_manager.get_user_by_id(user_id)
@@ -117,6 +118,9 @@ class PermissionManager(Database):
             self.__saved_permissions.append(saved_permission)
 
             return True
+
+        if self.__row_exists(user_id, instance_id):
+            return False
 
         permission = self.__get_permission(user_id, instance_id)
 
