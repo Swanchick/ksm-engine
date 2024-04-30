@@ -97,12 +97,12 @@ async def get_permissions():
     return jsonify(response)
 
 
-@app.route("/api/pong/")
+@app.route("/api/touch_some_grass/")
 async def ping():
     if request != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
-    return jsonify(ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Pong!").build())
+    return jsonify(ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Nope").build())
 
 
 if __name__ == "__main__":
