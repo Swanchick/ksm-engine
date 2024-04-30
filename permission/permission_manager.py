@@ -42,6 +42,8 @@ class PermissionManager(Database):
                              (user_id, instance_id))
 
         result = self._cursor.fetchone()
+        if result is None:
+            return
 
         return result[0]
 
@@ -71,6 +73,8 @@ class PermissionManager(Database):
     def __check_permission(self, permission: int, permission_to_check: int) -> bool:
         permissions = self.__break_into_permissions(permission)
 
+        print(permissions)
+
         return permission_to_check in permissions
 
     def load_user_manager(self, user_manager: UserManager):
@@ -92,8 +96,13 @@ class PermissionManager(Database):
         if not self.__is_saved_permission_exists(user_id, instance_id):
             return
 
-        saved_permission = self.__get_saved_permission(user_id, instance_id)
-        self.__saved_permissions.remove(saved_permission)
+        for index, saved_permission in enumerate(self.__saved_permissions):
+            if saved_permission.user_id == user_id and saved_permission.instance_id == instance_id:
+                print(saved_permission)
+
+                self.__saved_permissions.pop(index)
+
+                break
 
     def check_permission(self, user_id: int, instance_id: int, permission_type: Permissions) -> bool:
         if self.__is_saved_permission_exists(user_id, instance_id):
@@ -104,6 +113,8 @@ class PermissionManager(Database):
 
             if self.__check_permission(saved_permission.permission, permission_type.value):
                 return True
+
+            return False
 
         if not (self._connector and self._cursor):
             return False
@@ -119,10 +130,12 @@ class PermissionManager(Database):
 
             return True
 
-        if self.__row_exists(user_id, instance_id):
+        if not self.__row_exists(user_id, instance_id):
             return False
 
         permission = self.__get_permission(user_id, instance_id)
+        if permission is None:
+            return False
 
         if self.__check_permission(permission, permission_type.value):
             saved_permission = SavedPermission(user_id, instance_id, permission=permission)
@@ -168,12 +181,18 @@ class PermissionManager(Database):
         if not (self._connector and self._cursor):
             return
 
+        print(self.__saved_permissions)
+
         self.__delete_saved_permission(user_id, instance_id)
+
+        print(self.__saved_permissions)
 
         if not self.__row_exists(user_id, instance_id):
             self.__new_permission(user_id, instance_id)
 
         permission = self.__get_permission(user_id, instance_id)
+        if permission is None:
+            return
 
         if self.__check_permission(permission, permission_to_check):
             return
@@ -188,12 +207,21 @@ class PermissionManager(Database):
         if not (self._connector and self._cursor):
             return
 
+        print("User id " + user_id)
+        print("Instance " + instance_id)
+
+        print(self.__saved_permissions)
+
         self.__delete_saved_permission(user_id, instance_id)
+
+        print(self.__saved_permissions)
 
         if not self.__row_exists(user_id, instance_id):
             self.__new_permission(user_id, instance_id)
 
         permission = self.__get_permission(user_id, instance_id)
+        if permission is None:
+            return
 
         if not self.__check_permission(permission, permission_to_check):
             return

@@ -41,7 +41,7 @@ class InstanceCaller(ABC):
     def call(self, name: str, user_id: int, *args, **kwargs):
         for callback in self._callbacks:
             if callback.name == name:
-                if not self.__check_permission(user_id, callback.instance_id, callback.permissions):
+                if not self.__check_permission(user_id, callback.instance_id, callback.permission):
                     return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
                 return callback.call(*args, **kwargs)

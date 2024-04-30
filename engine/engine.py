@@ -84,6 +84,13 @@ class Engine:
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
         instance_data = data["instance_data"]
+        instance_id = instance_data["instance_id"]
+        if not self.__permission_manager.check_permission(user.user_id, instance_id, Permissions.INSTANCE_VIEW):
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_FORBIDDEN.value)
+                    .message("Forbidden!")
+                    .build())
+
         instance = self.__instance_manager.get_instance_by_id(instance_data["instance_id"])
         if instance is None:
             return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Instance not found!").build()
