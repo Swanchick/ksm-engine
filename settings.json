@@ -13,6 +13,7 @@
     "password": "12345678"
   },
   "instance_packages": {
-    "python": "https://github.com/Swanchick/ksm-python.git"
+    "python": "https://github.com/Swanchick/ksm-python.git",
+    "minecraft": "https://github.com/Swanchick/ksm-minecraft.git"
   }
 }
