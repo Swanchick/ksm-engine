@@ -98,8 +98,6 @@ class PermissionManager(Database):
 
         for index, saved_permission in enumerate(self.__saved_permissions):
             if saved_permission.user_id == user_id and saved_permission.instance_id == instance_id:
-                print(saved_permission)
-
                 self.__saved_permissions.pop(index)
 
                 break
@@ -175,17 +173,10 @@ class PermissionManager(Database):
         return output_data
 
     def add_permission(self, user_id: int, instance_id: int, permission_to_check: int):
-        if not self.__permission_exists(permission_to_check):
+        if not (self._connector and self._cursor and self.__permission_exists(permission_to_check)):
             return
-
-        if not (self._connector and self._cursor):
-            return
-
-        print(self.__saved_permissions)
 
         self.__delete_saved_permission(user_id, instance_id)
-
-        print(self.__saved_permissions)
 
         if not self.__row_exists(user_id, instance_id):
             self.__new_permission(user_id, instance_id)
@@ -201,20 +192,10 @@ class PermissionManager(Database):
         self.__update_permission(user_id, instance_id, permission)
 
     def remove_permission(self, user_id: int, instance_id: int, permission_to_check: int):
-        if not self.__permission_exists(permission_to_check):
+        if not (self._connector and self._cursor and self.__permission_exists(permission_to_check)):
             return
-
-        if not (self._connector and self._cursor):
-            return
-
-        print("User id " + user_id)
-        print("Instance " + instance_id)
-
-        print(self.__saved_permissions)
 
         self.__delete_saved_permission(user_id, instance_id)
-
-        print(self.__saved_permissions)
 
         if not self.__row_exists(user_id, instance_id):
             self.__new_permission(user_id, instance_id)
