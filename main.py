@@ -99,11 +99,8 @@ async def get_permissions():
 
 @app.route("/api/touch_some_grass/")
 async def ping():
-    if request != "POST":
-        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
-
     return jsonify(ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Nope").build())
 
 
 if __name__ == "__main__":
-    app.run(host=engine.ip, port=engine.port)
+    engine.start(app)

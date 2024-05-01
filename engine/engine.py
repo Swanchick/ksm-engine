@@ -1,3 +1,4 @@
+import logging
 from server import InstanceManager
 from permission import PermissionManager, Permissions
 from user import UserManager, UserAuthorization, User
@@ -5,6 +6,8 @@ from .settings_engine import EngineSettings
 from settings import SettingsCreator
 from utils import ResponseBuilder, HttpStatus
 from typing import Dict
+from flask import Flask
+from waitress import serve
 
 
 class Engine:
@@ -42,6 +45,12 @@ class Engine:
         user = self.__user_authorization.get_authorized_user(data["user_key"])
 
         return user
+
+    def start(self, app: Flask):
+        print("KSM Engine has been successfully started.")
+        print(f"Running on http://{self.ip}:{self.port}/")
+
+        serve(app, host=self.ip, port=self.port)
 
     def instance_call(self, method_name: str, data: Dict) -> Dict:
         if not self.__check_engine_password(data):
