@@ -1,4 +1,3 @@
-import logging
 from server import InstanceManager
 from permission import PermissionManager, Permissions
 from user import UserManager, UserAuthorization, User
@@ -77,12 +76,9 @@ class Engine:
         instance_data = data["instance_data"]
         instance_data["user_id"] = user.user_id
 
-        self.__instance_manager.create_instance(instance_data["name"], instance_data["instance_type"])
+        response = self.__instance_manager.create_instance(instance_data["name"], instance_data["instance_type"])
 
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .message("Instance has been successfully created!")
-                .build())
+        return response
 
     def get_instance(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):
@@ -136,6 +132,17 @@ class Engine:
                 .addition_data("instances", instances_out)
                 .build())
 
+    def get_instance_types(self, data: Dict) -> Dict:
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        instance_packages = SettingsCreator().data()["instance_packages"]
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("instance_types", instance_packages)
+                .build())
+
     def user_create(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
@@ -179,6 +186,17 @@ class Engine:
         users = self.__user_manager.get_users()
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
+
+    def get_user(self, data: Dict):
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        user = self.__get_user_by_key(data)
+
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("User not found!").build()
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("user", user.dict).build()
 
     def get_permissions(self, data: Dict) -> Dict:
         if not self.__check_engine_password(data):

@@ -52,13 +52,22 @@ async def get_instance_data():
     return jsonify(response)
 
 
+@app.route("/api/instance/types/", methods=["POST"])
+async def get_instance_types():
+    if request.method != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    data = request.json
+    response = engine.get_instance_types(data)
+    return jsonify(response)
+
+
 @app.route("/api/user/create/", methods=["POST"])
 async def create_user():
     if request.method != "POST":
         return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
 
     data = request.json
-
     response = engine.user_create(data)
 
     return jsonify(response)
@@ -72,7 +81,7 @@ async def authorization():
     data = request.json
     response = engine.authorize_user(data)
 
-    return response
+    return jsonify(response)
 
 
 @app.route("/api/user/get/", methods=["POST"])
@@ -82,6 +91,17 @@ async def get_users():
 
     data = request.json
     response = engine.get_users(data)
+
+    return jsonify(response)
+
+
+@app.route("/api/user/get_user/", methods=["POST"])
+async def get_user():
+    if request.method != "POST":
+        return jsonify(ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build())
+
+    data = request.json
+    response = engine.get_user(data)
 
     return jsonify(response)
 
