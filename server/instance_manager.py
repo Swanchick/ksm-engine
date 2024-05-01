@@ -4,7 +4,7 @@ from .instance import ServerInstance
 from api import Api
 from database_utils import Database
 from .instance_loader import InstanceLoader
-from utils import ResponseBuilder
+from utils import ResponseBuilder, HttpStatus
 
 KSM_DATABASE = "ksm_database"
 
@@ -39,9 +39,19 @@ class InstanceManager(Database, Api):
 
     def create_instance(self, name: str, instance_type: str):
         if not (self._connector and self._cursor):
-            return
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                    .message("Database doesn't exist.")
+                    .build())
 
         instance_loader = InstanceLoader(self.__instance_folder, name, instance_type)
+        status = instance_loader.start()
+        if not status:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                    .message("Invalid parameters!")
+                    .build())
+
         instance_loader.load()
 
         self._cursor.execute("INSERT INTO instances (name) VALUES (%s)", (name, ))
@@ -51,6 +61,8 @@ class InstanceManager(Database, Api):
         instance_folder = self.__generate_folder(name)
 
         self.__load_instance(instance_id, name, instance_folder)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Instance created!").build()
 
     def load_folder(self, instance_folder: str):
         self.__instance_folder = instance_folder
