@@ -43,9 +43,9 @@ class FolderSystem:
             current_path = path + file
 
             if isfile(current_path):
-                files_out.append(FileUnit(current_path, FileType.FILE).dict)
+                files_out.append(FileUnit(file, FileType.FILE).dict)
             elif isdir(current_path):
-                files_out.append(FileUnit(current_path, FileType.FOLDER).dict)
+                files_out.append(FileUnit(file, FileType.FOLDER).dict)
 
         files_out.sort(key=lambda x: x["file_type"] == FileType.FOLDER.value)
 
