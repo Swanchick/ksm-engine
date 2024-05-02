@@ -51,7 +51,7 @@ class Engine:
     def decrypt_data(self, data: Dict) -> Dict:
         encrypted_data = b64decode(data["data"])
         decrypted_json = self.__cryptography.decrypt(encrypted_data).decode()
-        
+
         return loads(decrypted_json)
 
     def __check_engine_password(self, data: Dict) -> bool:
