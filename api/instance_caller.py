@@ -44,4 +44,7 @@ class InstanceCaller(ABC):
                 if not self.__check_permission(user_id, callback.instance_id, callback.permission):
                     return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
-                return callback.call(*args, **kwargs)
+                try:
+                    return callback.call(*args, **kwargs)
+                except Exception as e:
+                    return ResponseBuilder().status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value).message(e).build()
