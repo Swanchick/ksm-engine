@@ -12,6 +12,7 @@ class EngineSettings(Settings):
     __name: str
     __instance_folder: str
     __password: str
+    __secret_key: str
 
     settings_name = "engine"
 
@@ -21,6 +22,7 @@ class EngineSettings(Settings):
         self.__name = data["name"]
         self.__instance_folder = data["server_instances_folder"]
         self.__password = data["password"]
+        self.__secret_key = data["secret_key"]
 
     def check_password(self, engine_password) -> bool:
         return engine_password == self.__password
@@ -40,3 +42,7 @@ class EngineSettings(Settings):
     @property
     def instance_folder(self) -> str:
         return self.__instance_folder
+
+    @property
+    def secret_key(self) -> str:
+        return self.__secret_key

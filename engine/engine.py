@@ -7,6 +7,9 @@ from utils import ResponseBuilder, HttpStatus
 from typing import Dict
 from flask import Flask
 from waitress import serve
+from cryptography.fernet import Fernet
+from json import loads, dumps
+from base64 import b64encode, b64decode
 
 
 class Engine:
@@ -15,9 +18,12 @@ class Engine:
     __permission_manager: PermissionManager
     __engine_settings: EngineSettings
     __user_authorization: UserAuthorization
+    __cryptography: Fernet
 
     def __init__(self):
         self.__engine_settings = SettingsCreator().settings("engine")
+
+        self.__cryptography = Fernet(self.__engine_settings.secret_key)
 
         self.__instance_manager = InstanceManager()
         self.__instance_manager.load_folder(self.__engine_settings.instance_folder)
@@ -35,6 +41,23 @@ class Engine:
 
         self.__user_authorization = UserAuthorization(self.__user_manager)
 
+    def encrypt_data(self, data: Dict) -> str:
+        print(f"Encrypting data: {data}")
+
+        json = dumps(data)
+        encrypted_json = self.__cryptography.encrypt(json.encode())
+        bs64 = b64encode(encrypted_json)
+
+        return bs64.decode()
+
+    def decrypt_data(self, data: Dict) -> Dict:
+        encrypted_data = b64decode(data["data"])
+        decrypted_json = self.__cryptography.decrypt(encrypted_data).decode()
+
+        print(decrypted_json)
+
+        return loads(decrypted_json)
+
     def __check_engine_password(self, data: Dict) -> bool:
         password = data["password"]
 
@@ -51,7 +74,9 @@ class Engine:
 
         serve(app, host=self.ip, port=self.port)
 
-    def instance_call(self, method_name: str, data: Dict) -> Dict:
+    def instance_call(self, method_name: str, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -65,7 +90,9 @@ class Engine:
 
         return response
 
-    def instance_create(self, data: Dict) -> Dict:
+    def instance_create(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -80,7 +107,9 @@ class Engine:
 
         return response
 
-    def get_instance(self, data: Dict) -> Dict:
+    def get_instance(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -105,7 +134,9 @@ class Engine:
                 .addition_data("instance_data", instance.dict)
                 .build())
 
-    def get_instances(self, data: Dict) -> Dict:
+    def get_instances(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -132,7 +163,9 @@ class Engine:
                 .addition_data("instances", instances_out)
                 .build())
 
-    def get_instance_types(self, data: Dict) -> Dict:
+    def get_instance_types(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -143,7 +176,9 @@ class Engine:
                 .addition_data("instance_types", instance_packages)
                 .build())
 
-    def user_create(self, data: Dict) -> Dict:
+    def user_create(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -163,7 +198,9 @@ class Engine:
                 .message("User has been created successfully!")
                 .build())
 
-    def authorize_user(self, data: Dict) -> Dict:
+    def authorize_user(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -179,7 +216,9 @@ class Engine:
                 .addition_data("user_data", {"key": key})
                 .build())
 
-    def get_users(self, data: Dict) -> Dict:
+    def get_users(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -187,7 +226,9 @@ class Engine:
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
 
-    def get_user(self, data: Dict):
+    def get_user(self, encrypted_data: Dict):
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -198,7 +239,9 @@ class Engine:
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("user", user.dict).build()
 
-    def get_permissions(self, data: Dict) -> Dict:
+    def get_permissions(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 

@@ -1,9 +1,11 @@
-import permission
-from permission import PermissionManager, Permissions
+from engine import Engine
 
+engine = Engine()
 
-permission_manager = PermissionManager()
-permission_manager.start()
+message = {"say": "Hello World"}
+encrypted_message = engine.encrypt_data(message)
+print(encrypted_message)
 
-print(permission_manager.get_all_permissions_from_instance(6))
-
+data = {"data": encrypted_message}
+decrypted_message = engine.decrypt_data(data)
+print(decrypted_message)

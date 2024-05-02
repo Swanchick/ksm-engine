@@ -4,7 +4,8 @@
     "port": 52146,
     "name": "first_engine",
     "server_instances_folder": "E:/ksm/ksm-instances/",
-    "password": "12345678"
+    "password": "12345678",
+    "secret_key": "j2NSLoXO9uE1HX8nLiTX-yQWtWCMkWH05M5r5gS-66I="
   },
   "database": {
     "ip": "127.0.0.1",
