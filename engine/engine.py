@@ -42,8 +42,6 @@ class Engine:
         self.__user_authorization = UserAuthorization(self.__user_manager)
 
     def encrypt_data(self, data: Dict) -> str:
-        print(f"Encrypting data: {data}")
-
         json = dumps(data)
         encrypted_json = self.__cryptography.encrypt(json.encode())
         bs64 = b64encode(encrypted_json)
@@ -53,9 +51,7 @@ class Engine:
     def decrypt_data(self, data: Dict) -> Dict:
         encrypted_data = b64decode(data["data"])
         decrypted_json = self.__cryptography.decrypt(encrypted_data).decode()
-
-        print(decrypted_json)
-
+        
         return loads(decrypted_json)
 
     def __check_engine_password(self, data: Dict) -> bool:
