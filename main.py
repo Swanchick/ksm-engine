@@ -143,6 +143,4 @@ async def ping():
 
 
 if __name__ == "__main__":
-    app.run(host=engine.ip, port=engine.port)
-
-    # engine.start(app)
+    engine.start(app)
