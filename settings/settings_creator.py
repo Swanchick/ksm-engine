@@ -33,3 +33,7 @@ class SettingsCreator:
 
     def data(self) -> Dict:
         return self.__read_file()
+
+    def save(self, data: Dict):
+        reader = JsonReader(self.__path)
+        reader.write(data)

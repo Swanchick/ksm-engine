@@ -1,9 +1,10 @@
 from database_utils import Database
 from .user import User
 from typing import List, Optional, Dict
+from abstract import AbstractUserManager
 
 
-class UserManager(Database):
+class UserManager(AbstractUserManager, Database):
     def start(self):
         self._connector = self._connect("ksm_database")
         self._cursor = self._connector.cursor()

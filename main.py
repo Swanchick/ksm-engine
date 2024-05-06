@@ -1,7 +1,10 @@
 from flask import Flask, request
 from engine import Engine
-from utils import ResponseBuilder, HttpStatus
+from utils import ResponseBuilder, HttpStatus, InitProject
+from sys import argv
 
+
+INIT_PROJECT = "--init"
 
 engine = Engine()
 app = Flask(__name__)
@@ -142,5 +145,15 @@ async def ping():
     return engine.encrypt_data(ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Nope").build())
 
 
-if __name__ == "__main__":
+def main():
+    if INIT_PROJECT in argv:
+        init_project = InitProject(engine.user_manager)
+        init_project.start()
+
+        return
+
     engine.start(app)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,4 +1,4 @@
-from json import load
+from json import load, dump
 from os.path import exists
 
 

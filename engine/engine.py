@@ -258,3 +258,7 @@ class Engine:
     @property
     def ip(self) -> str:
         return self.__engine_settings.ip
+
+    @property
+    def user_manager(self) -> UserManager:
+        return self.__user_manager
