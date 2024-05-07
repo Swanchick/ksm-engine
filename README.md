@@ -54,7 +54,6 @@ The program interacts with a database (assumed to be MySQL based on the table cr
    - Implemented permission management functionalities for controlling access to various features based on user roles.
 
 ### Conclusions Functional Requirement:
-Based on the implemented functionalities, here are some conclusions:
 
 The application successfully implements core functionalities related to user, instance, settings, database, and permission management, providing a comprehensive system for managing resources and permissions within the application.
 The modular design of the application allows for easy extension and integration of new features or components in the future. Each component is encapsulated, making it easier to modify or extend without affecting other parts of the system.
@@ -62,7 +61,6 @@ The permission management system ensures that access to sensitive operations or 
 By implementing features such as error handling and status reporting, the application aims to be reliable and resilient to failures.
 
 ### Extensibility Possibilities:
-To extend the application further, here are some possible avenues:
 
 1. **Additional Functionality**: Introduce new functionalities such as logging, monitoring, or task scheduling to enhance the application's capabilities.
 2. **Integration with External Services**: Extend the application to integrate with external services or APIs for additional functionality or data sources.
