@@ -10,7 +10,15 @@ class FileSystem:
         self.__instance_folder = folder
 
     def __build_path(self, file_name: str, path: Tuple[str, ...] = "") -> str:
-        return self.__instance_folder + "/".join(path) + "/" + file_name
+        full_path = ""
+
+        for f in path:
+            if f == "":
+                continue
+
+            full_path += f"/{f}"
+
+        return self.__instance_folder + full_path[1:] + file_name
 
     @staticmethod
     def __check_folders_access(path: Tuple[str, ...]) -> bool:
