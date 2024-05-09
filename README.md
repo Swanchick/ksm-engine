@@ -1,12 +1,15 @@
 # Kyryl's Server Manager (KSM)
 
-## Introduction
+### Made by `Kyryl Lebedenko` from `EKfu-23`!
+
+---
+## Introduction:
 
 1. Our app, Kyryl's Server Manager (KSM), makes it super easy to handle different types of servers, like Python, PHP, and even gaming servers like Minecraft or Garry's Mod.
 2. To start using the program, first clone the "ksm-engine" and "ksm-panel" repositories from the Git repository, set up a MySQL database, then configure the database information in the "settings.json" file located in the "ksm-engine" folder, and also set up details about the "ksm-engine" in the "settings.json" file in the "ksm-panel" folder.
 3. Using KSM is easy! When you open it, you'll see a list of your servers. From there, you can make new ones, change settings on existing ones, and even make multiple servers run at the same time. Plus, you can decide who gets to do what with each server, so you're always in control. Whether you're new to servers or a pro, KSM makes managing them a breeze.
 
-## Body/Analysis
+## Body/Analysis:
 
 Let's analyze how the program covers the functional requirements, including the implementation of OOP principles (Encapsulation, Inheritance, Polymorphism, Abstraction), as well as the SOLID principles and design patterns.
 
@@ -26,8 +29,119 @@ Let's analyze how the program covers the functional requirements, including the 
 
 ### Design Patterns:
 1. **Factory Method**: The `SettingsCreator` class acts as a factory method to create specific settings objects based on the provided settings type.
+
+```py
+class SettingsCreator:
+    __path: str
+    __settings: Settings
+
+    def __init__(self, path: str = "settings.json"):
+        self.__path = path
+
+    def __read_file(self):
+        reader = JsonReader(self.__path)
+
+        return reader.read()
+
+    def settings(self, settings_type: str):
+        settings_manager = SettingsManager()
+
+        self.__settings = settings_manager.get_settings(settings_type)()
+
+        data = self.__read_file()
+        if settings_type not in data:
+            return {}
+
+        data = data[settings_type]
+
+        self.__settings.set_settings(**data)
+
+        return self.__settings
+
+    def data(self) -> Dict:
+        return self.__read_file()
+
+    def save(self, data: Dict):
+        reader = JsonReader(self.__path)
+        reader.write(data)
+```
+
 2. **Builder Pattern**: The `ResponseBuilder` class is used to implement a builder pattern to build responses in http server.
+
+```py
+class ResponseBuilder:
+    __response: Dict
+
+    def __init__(self):
+        self.__response = {"status": None}
+
+    def message(self, message: str):
+        self.__response["message"] = message
+
+        return self
+
+    def status(self, status: int):
+        self.__response["status"] = status
+
+        return self
+
+    def addition_data(self, key: str, addition_data: Dict):
+        if key in self.__response:
+            return self
+
+        self.__response[key] = addition_data
+
+        return self
+
+    def build(self) -> Dict:
+        return self.__response
+```
+### Example of ResponseBuilder
+```py
+print((ResponseBuilder()
+       .status(200)
+       .message("Hello World")
+       .addition_data("some_data", {"data1": "Another hello world"})
+       .build())
+      )
+```
+
+Output:
+```json
+{
+   "status": 200,
+   "message": "Hello World",
+   "some_data": {
+      "data1": "Another hello world"
+   }
+}
+```
+
+
 3. **Singleton Pattern**: The `SettingsManager` class is implemented as a singleton to ensure there is only one instance of it in the application.
+
+```py
+class SettingsManager:
+    __settings_types: Dict[str, Type[Settings]] = {}
+
+    instance = None
+
+    def __new__(cls):
+        if cls.instance is None:
+            cls.instance = super().__new__(cls)
+
+        return cls.instance
+
+    def register_settings(self, cls: Type[Settings]):
+        name = cls.settings_name
+
+        self.__settings_types[name] = cls
+
+        return cls
+
+    def get_settings(self, name) -> Type[Settings]:
+        return self.__settings_types[name]
+```
 
 ### Reading from File & Writing to File:
 The program reads settings from a JSON file using the `JsonReader` class and writes data to the same file using the `write()` method of the `JsonReader` class. This functionality is encapsulated within the `SettingsCreator` class.
