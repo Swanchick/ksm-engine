@@ -64,8 +64,6 @@ By implementing features such as error handling and status reporting, the applic
 
 1. **Additional Functionality**: Introduce new functionalities such as logging, monitoring, or task scheduling to enhance the application's capabilities.
 2. **Integration with External Services**: Extend the application to integrate with external services or APIs for additional functionality or data sources.
-3. **Enhanced User Interface**: Develop a user-friendly interface or dashboard to interact with the application, providing users with better visibility and control over system operations.
-4**Optimization and Performance**: Optimize database queries, file operations, and other critical components to improve the application's performance and scalability.
-5**Support for Different Database Types**: Extend database support beyond MySQL to include other database systems such as MongoDB or SQLite, providing users with more flexibility in choosing their preferred database solution.
-
-By exploring these avenues, the application can be further enhanced to meet evolving requirements and address the needs of its users effectively.
+3. **Integration of Docker**: In the future, we plan to incorporate Docker container support into KSM. This will allow us to manipulate performance and isolate processes more effectively. Ultimately, both the ksm-engine and ksm-panel will transition into Docker containers, simplifying their setup process significantly.
+4. **Enhanced User Interface**: Develop a user-friendly interface or dashboard to interact with the application, providing users with better visibility and control over system operations.
+5. **Optimization and Performance**: Probably after course work, I'll rewrite ksm-engine to other programming language, such as, `Rust` or `C#`, to make backend part as fast as possible.
