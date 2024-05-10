@@ -3,7 +3,6 @@ from typing import List
 from .callback import Callback
 from permission import PermissionManager, Permissions
 from utils import ResponseBuilder, HttpStatus
-from server import InstanceException
 
 
 class InstanceCaller(ABC):
@@ -47,5 +46,8 @@ class InstanceCaller(ABC):
 
                 try:
                     return callback.call(*args, **kwargs)
-                except InstanceException as e:
-                    return ResponseBuilder().status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value).message(str(e)).build()
+                except Exception as e:
+                    return (ResponseBuilder()
+                            .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                            .message(str(e))
+                            .build())
