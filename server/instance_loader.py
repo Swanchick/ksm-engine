@@ -1,5 +1,5 @@
-from utils import RepoDownloader
-from settings import SettingsCreator
+from utils.repo_downloader import RepoDownloader
+from settings.settings_creator import SettingsCreator
 
 
 INSTANCE_PACKAGES = "instance_packages"

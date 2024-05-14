@@ -1,4 +1,4 @@
-from abstract import AbstractUserManager
+from user.user_manager_abstract import AbstractUserManager
 from typing import Dict
 
 

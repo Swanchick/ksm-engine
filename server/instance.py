@@ -1,15 +1,19 @@
 import logging
 from subprocess import Popen, PIPE
 from typing import List, Optional, Dict
-from permission import PermissionManager, Permissions
+from permission.permission_manager import PermissionManager
+from permission.permissions import Permissions
 from .state import ServerState
 from .output import ServerOutput, OutputType
-from threading import Thread
 from .settings_instance import InstanceSettings
-from settings import SettingsCreator, Settings
-from api import InstanceCaller
-from utils import ResponseBuilder, HttpStatus
-from files import FolderSystem, FileSystem
+from threading import Thread
+from settings.settings_creator import SettingsCreator
+from settings.abstract_settings import AbstractSettings
+from api.instance_caller import InstanceCaller
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
+from files.folder_system import FolderSystem
+from files.file_system import FileSystem
 from psutil import Process
 from .instance_exception import InstanceException
 
@@ -39,7 +43,7 @@ class ServerInstance(InstanceCaller):
         self.__output = []
         self.__server_process = True
         self.__server_state = ServerState.STOP
-        self.__settings: Settings
+        self.__settings: AbstractSettings
 
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)

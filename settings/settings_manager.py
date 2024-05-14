@@ -1,9 +1,9 @@
-from .settings import Settings
+from .abstract_settings import AbstractSettings
 from typing import Dict, Type
 
 
 class SettingsManager:
-    __settings_types: Dict[str, Type[Settings]] = {}
+    __settings_types: Dict[str, Type[AbstractSettings]] = {}
 
     instance = None
 
@@ -13,12 +13,12 @@ class SettingsManager:
 
         return cls.instance
 
-    def register_settings(self, cls: Type[Settings]):
+    def register_settings(self, cls: Type[AbstractSettings]):
         name = cls.settings_name
 
         self.__settings_types[name] = cls
 
         return cls
 
-    def get_settings(self, name) -> Type[Settings]:
+    def get_settings(self, name) -> Type[AbstractSettings]:
         return self.__settings_types[name]

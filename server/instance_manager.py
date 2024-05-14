@@ -1,10 +1,11 @@
 from typing import List, Dict, Optional
-from permission import PermissionManager
+from permission.permission_manager import PermissionManager
 from .instance import ServerInstance
-from api import Api
-from database_utils import Database
+from api.api import Api
+from database_utils.database import Database
 from .instance_loader import InstanceLoader
-from utils import ResponseBuilder, HttpStatus
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
 
 KSM_DATABASE = "ksm_database"
 
@@ -30,9 +31,7 @@ class InstanceManager(Database, Api):
 
     def start(self):
         self.__instances = []
-
-        self._connector = self._connect(KSM_DATABASE)
-        self._cursor = self._connector.cursor()
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
                              "name CHAR(128) UNIQUE)")
@@ -54,6 +53,8 @@ class InstanceManager(Database, Api):
 
         instance_loader.load()
 
+        self._connect(KSM_DATABASE)
+
         self._cursor.execute("INSERT INTO instances (name) VALUES (%s)", (name, ))
         self._connector.commit()
         self._cursor.execute("SELECT id FROM instances WHERE name = %s", (name, ))
@@ -71,8 +72,7 @@ class InstanceManager(Database, Api):
         self.__permission_manager = permission_manager
 
     def load_instances(self):
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("SELECT * FROM instances")
         instances = self._cursor.fetchall()

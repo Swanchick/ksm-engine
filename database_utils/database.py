@@ -1,5 +1,5 @@
 from typing import Optional
-from settings import SettingsCreator
+from settings.settings_creator import SettingsCreator
 from mysql.connector import connect as mysql_connect
 from abc import ABC, abstractmethod
 from .settings_database import DatabaseSettings
@@ -18,15 +18,13 @@ class Database(ABC):
         super().__init__()
 
     def __init_database(self):
-        connect = self._connect()
+        self._connect()
 
-        cursor = connect.cursor()
+        self._cursor.execute("CREATE DATABASE IF NOT EXISTS ksm_database")
+        self._connector.commit()
+        self._cursor.close()
 
-        cursor.execute("CREATE DATABASE IF NOT EXISTS ksm_database")
-        connect.commit()
-        cursor.close()
-
-        connect.disconnect()
+        self._connector.disconnect()
 
     def _connect(self, database_name: Optional[str] = None):
         connect = mysql_connect(
@@ -36,7 +34,8 @@ class Database(ABC):
             database=database_name
         )
 
-        return connect
+        self._connector = connect
+        self._cursor = connect.cursor()
 
     @abstractmethod
     def start(self):

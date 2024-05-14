@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Settings(ABC):
+class AbstractSettings(ABC):
     settings_name = "base"
 
     @abstractmethod

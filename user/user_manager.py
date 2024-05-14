@@ -1,22 +1,21 @@
-from database_utils import Database
+from database_utils.database import Database
 from .user import User
 from typing import List, Optional, Dict
-from abstract import AbstractUserManager
+from .user_manager_abstract import AbstractUserManager
+
+KSM_DATABASE = "ksm_database"
 
 
 class UserManager(AbstractUserManager, Database):
     def start(self):
-        self._connector = self._connect("ksm_database")
-        self._cursor = self._connector.cursor()
-
+        self._connect(KSM_DATABASE)
         self._cursor.execute("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY AUTO_INCREMENT,"
                              "name TEXT,"
                              "password text,"
                              "administrator BOOLEAN DEFAULT false)")
 
     def create_user(self, name: str, password: str, administrator: bool):
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         user = User(name, password, administrator)
 
@@ -27,8 +26,7 @@ class UserManager(AbstractUserManager, Database):
         return user
 
     def get_users(self) -> Optional[List[Dict]]:
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("SELECT * FROM users")
 
@@ -44,8 +42,7 @@ class UserManager(AbstractUserManager, Database):
         if user_id is None:
             return
 
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
 
@@ -61,16 +58,13 @@ class UserManager(AbstractUserManager, Database):
         if name is None:
             return
 
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("SELECT * FROM users WHERE name = %s", (name, ))
 
         user_data = self._cursor.fetchone()
         if not user_data:
             return
-
-        print(user_data)
 
         user = User(user_data[1], user_data[2], user_data[3], user_data[0], False)
 

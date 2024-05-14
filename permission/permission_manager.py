@@ -1,8 +1,10 @@
-from database_utils import Database
-from user import UserManager, user_manager
+from database_utils.database import Database
+from user.user_manager import UserManager
 from permission.permissions import Permissions
 from typing import List, Optional, Dict
 from .saved_permission import SavedPermission
+
+KSM_DATABASE = "ksm_database"
 
 
 class PermissionManager(Database):
@@ -12,14 +14,14 @@ class PermissionManager(Database):
     def start(self):
         self.__saved_permissions = []
 
-        self._connector = self._connect("ksm_database")
-        self._cursor = self._connector.cursor()
-
+        self._connect(KSM_DATABASE)
         self._cursor.execute("CREATE TABLE IF NOT EXISTS permissions (user_id INTEGER,"
                              "instance_id INTEGER NOT NULL,"
                              "permission INTEGER DEFAULT 0)")
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
+        self._connect(KSM_DATABASE)
+
         self._cursor.execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",
                              (user_id, instance_id))
 
@@ -27,17 +29,23 @@ class PermissionManager(Database):
         return result[0] > 0
 
     def __new_permission(self, user_id: int, instance_id: int):
+        self._connect(KSM_DATABASE)
+
         self._cursor.execute("INSERT INTO permissions (user_id, instance_id) VALUES (%s, %s)", (user_id, instance_id))
 
         self._connector.commit()
 
     def __update_permission(self, user_id: int, instance_id: int, permission: int):
+        self._connect(KSM_DATABASE)
+
         self._cursor.execute("UPDATE permissions SET permission = %s WHERE user_id = %s AND instance_id = %s",
                              (permission, user_id, instance_id))
 
         self._connector.commit()
 
     def __get_permission(self, user_id: int, instance_id: int):
+        self._connect(KSM_DATABASE)
+
         self._cursor.execute("SELECT permission FROM permissions WHERE user_id = %s AND instance_id = %s",
                              (user_id, instance_id))
 
@@ -144,8 +152,7 @@ class PermissionManager(Database):
         return False
 
     def get_all_permissions_from_instance(self, instance_id: int) -> Optional[List[Dict]]:
-        if not (self._connector and self._cursor):
-            return
+        self._connect(KSM_DATABASE)
 
         self._cursor.execute("SELECT * "
                              "FROM permissions "
@@ -173,7 +180,7 @@ class PermissionManager(Database):
         return output_data
 
     def add_permission(self, user_id: int, instance_id: int, permission_to_check: int):
-        if not (self._connector and self._cursor and self.__permission_exists(permission_to_check)):
+        if not self.__permission_exists(permission_to_check):
             return
 
         self.__delete_saved_permission(user_id, instance_id)
@@ -192,7 +199,7 @@ class PermissionManager(Database):
         self.__update_permission(user_id, instance_id, permission)
 
     def remove_permission(self, user_id: int, instance_id: int, permission_to_check: int):
-        if not (self._connector and self._cursor and self.__permission_exists(permission_to_check)):
+        if not self.__permission_exists(permission_to_check):
             return
 
         self.__delete_saved_permission(user_id, instance_id)

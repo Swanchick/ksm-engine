@@ -1,9 +1,13 @@
-from server import InstanceManager
-from permission import PermissionManager, Permissions
-from user import UserManager, UserAuthorization, User
+from server.instance_manager import InstanceManager
+from permission.permission_manager import PermissionManager
+from permission.permissions import Permissions
+from user.user_manager import UserManager
+from user.user import User
+from user.user_authorization import UserAuthorization
 from .settings_engine import EngineSettings
-from settings import SettingsCreator
-from utils import ResponseBuilder, HttpStatus
+from settings.settings_creator import SettingsCreator
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
 from typing import Dict
 from flask import Flask
 from waitress import serve

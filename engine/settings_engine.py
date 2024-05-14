@@ -1,4 +1,4 @@
-from settings.settings import Settings
+from settings.abstract_settings import AbstractSettings
 from settings.settings_manager import SettingsManager
 
 
@@ -6,7 +6,7 @@ settings_manager = SettingsManager()
 
 
 @settings_manager.register_settings
-class EngineSettings(Settings):
+class EngineSettings(AbstractSettings):
     __ip: str
     __port: int
     __name: str

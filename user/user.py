@@ -1,5 +1,5 @@
 from uuid import uuid4
-from utils import HashPassword
+from utils.hash import HashPassword
 
 
 class User:

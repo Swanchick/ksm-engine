@@ -1,4 +1,4 @@
-from permission import Permissions
+from permission.permissions import Permissions
 
 
 class Callback:

@@ -1,13 +1,13 @@
-from settings import Settings
+from settings.abstract_settings import AbstractSettings
+from settings.settings_manager import SettingsManager
 from typing import List
-from settings import SettingsManager
 
 
 settings_manager = SettingsManager()
 
 
 @settings_manager.register_settings
-class InstanceSettings(Settings):
+class InstanceSettings(AbstractSettings):
     __program: str
     __arguments: List[str]
 

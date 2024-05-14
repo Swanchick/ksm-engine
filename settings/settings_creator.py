@@ -1,12 +1,12 @@
-from utils import JsonReader
-from .settings import Settings
+from utils.json_reader import JsonReader
+from .abstract_settings import AbstractSettings
 from typing import Dict
 from .settings_manager import SettingsManager
 
 
 class SettingsCreator:
     __path: str
-    __settings: Settings
+    __settings: AbstractSettings
 
     def __init__(self, path: str = "settings.json"):
         self.__path = path

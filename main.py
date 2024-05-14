@@ -1,6 +1,8 @@
 from flask import Flask, request
-from engine import Engine
-from utils import ResponseBuilder, HttpStatus, InitProject
+from engine.engine import Engine
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
+from utils.init_project import InitProject
 from sys import argv
 
 

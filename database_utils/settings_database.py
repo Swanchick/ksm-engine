@@ -1,12 +1,12 @@
-from settings import Settings
-from settings import SettingsManager
+from settings.abstract_settings import AbstractSettings
+from settings.settings_manager import SettingsManager
 
 
 settings_manager = SettingsManager()
 
 
 @settings_manager.register_settings
-class DatabaseSettings(Settings):
+class DatabaseSettings(AbstractSettings):
     __ip: str
     __user: str
     __port: int

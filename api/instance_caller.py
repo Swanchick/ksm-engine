@@ -1,8 +1,10 @@
 from abc import ABC
 from typing import List
 from .callback import Callback
-from permission import PermissionManager, Permissions
-from utils import ResponseBuilder, HttpStatus
+from permission.permission_manager import PermissionManager
+from permission.permissions import Permissions
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
 
 
 class InstanceCaller(ABC):

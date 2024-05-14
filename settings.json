@@ -2,16 +2,16 @@
   "engine": {
     "ip": "127.0.0.1",
     "port": 52146,
-    "name": "<Engine name>",
-    "server_instances_folder": "<Instance Folder>",
-    "password": "<Password>",
-    "secret_key": "<Secret_Key>"
+    "name": "First Engine",
+    "server_instances_folder": "E:/ksm/ksm-instances/",
+    "password": "12345678",
+    "secret_key": "ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg="
   },
   "database": {
     "ip": "127.0.0.1",
     "user": "root",
     "port": 3306,
-    "password": "<Database password>"
+    "password": "12345678"
   },
   "instance_packages": {
     "python": "https://github.com/Swanchick/ksm-python.git",
