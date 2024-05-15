@@ -1,20 +1,20 @@
 {
-  "engine": {
-    "ip": "127.0.0.1",
-    "port": 52146,
-    "name": "First Engine",
-    "server_instances_folder": "E:/ksm/ksm-instances/",
-    "password": "12345678",
-    "secret_key": "ZmDfcTF7_60GrrY167zsiPd67pEvs0aGOv2oasOM1Pg="
-  },
-  "database": {
-    "ip": "127.0.0.1",
-    "user": "root",
-    "port": 3306,
-    "password": "12345678"
-  },
-  "instance_packages": {
-    "python": "https://github.com/Swanchick/ksm-python.git",
-    "minecraft": "https://github.com/Swanchick/ksm-minecraft.git"
-  }
+    "engine": {
+        "ip": "<Engine's ip>",
+        "port": 52146,
+        "name": "<Engine name>",
+        "server_instances_folder": "<Instance folder>",
+        "password": "<Password>",
+        "secret_key": "<Secret key>"
+    },
+    "database": {
+        "ip": "127.0.0.1",
+        "user": "root",
+        "port": 3306,
+        "password": "12345678"
+    },
+    "instance_packages": {
+        "python": "https://github.com/Swanchick/ksm-python.git",
+        "minecraft": "https://github.com/Swanchick/ksm-minecraft.git"
+    }
 }

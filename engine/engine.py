@@ -27,8 +27,6 @@ class Engine:
     def __init__(self):
         self.__engine_settings = SettingsCreator().settings("engine")
 
-        self.__cryptography = Fernet(self.__engine_settings.secret_key)
-
         self.__instance_manager = InstanceManager()
         self.__instance_manager.load_folder(self.__engine_settings.instance_folder)
         self.__instance_manager.start()
@@ -69,6 +67,14 @@ class Engine:
         return user
 
     def start(self, app: Flask):
+        try:
+            self.__cryptography = Fernet(self.__engine_settings.secret_key)
+        except Exception:
+            print("Fernet key could not be loaded!")
+            print("Setup engine to fix the problem \"python main.py --init\"")
+
+            return
+
         print("KSM Engine has been successfully started.")
         print(f"Running on http://{self.ip}:{self.port}/")
 

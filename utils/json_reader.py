@@ -16,3 +16,8 @@ class JsonReader:
             data = load(f)
 
             return data
+
+    def write(self, data: dict):
+        with open(self.__file_name, 'w') as f:
+            dump(data, f, indent=4)
+            f.close()
