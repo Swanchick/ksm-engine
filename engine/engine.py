@@ -1,4 +1,4 @@
-from server.instance_manager import InstanceManager
+from server.instance_api import InstanceApi
 from permission.permission_manager import PermissionManager
 from permission.permissions import Permissions
 from user.user_manager import UserManager
@@ -17,19 +17,21 @@ from base64 import b64encode, b64decode
 
 
 class Engine:
-    __instance_manager: InstanceManager
+    __instance_api: InstanceApi
     __user_manager: UserManager
     __permission_manager: PermissionManager
     __engine_settings: EngineSettings
     __user_authorization: UserAuthorization
     __cryptography: Fernet
+    __debug: bool
 
     def __init__(self):
         self.__engine_settings = SettingsCreator().settings("engine")
+        self.__debug = self.__engine_settings.debug
 
-        self.__instance_manager = InstanceManager()
-        self.__instance_manager.load_folder(self.__engine_settings.instance_folder)
-        self.__instance_manager.start()
+        self.__cryptography = Fernet(self.__engine_settings.secret_key)
+
+        self.__instance_api = InstanceApi(self.__engine_settings.instance_folder)
 
         self.__user_manager = UserManager()
         self.__user_manager.start()
@@ -38,12 +40,15 @@ class Engine:
         self.__permission_manager.start()
         self.__permission_manager.load_user_manager(self.__user_manager)
 
-        self.__instance_manager.load_permission_manager(self.__permission_manager)
-        self.__instance_manager.load_instances()
+        self.__instance_api.instance_manager.load_permission_manager(self.__permission_manager)
+        self.__instance_api.instance_manager.load_instances()
 
         self.__user_authorization = UserAuthorization(self.__user_manager)
 
     def encrypt_data(self, data: Dict) -> str:
+        if self.__debug:
+            return dumps(data)
+
         json = dumps(data)
         encrypted_json = self.__cryptography.encrypt(json.encode())
         bs64 = b64encode(encrypted_json)
@@ -51,6 +56,9 @@ class Engine:
         return bs64.decode()
 
     def decrypt_data(self, data: Dict) -> Dict:
+        if self.__debug:
+            return data
+
         encrypted_data = b64decode(data["data"])
         decrypted_json = self.__cryptography.decrypt(encrypted_data).decode()
 
@@ -92,7 +100,7 @@ class Engine:
 
         instance_data = data["instance_data"]
         instance_data["user_id"] = user.user_id
-        response = self.__instance_manager.request(method_name, instance_data)
+        response = self.__instance_api.request(method_name, instance_data)
 
         return response
 
@@ -109,7 +117,10 @@ class Engine:
         instance_data = data["instance_data"]
         instance_data["user_id"] = user.user_id
 
-        response = self.__instance_manager.create_instance(instance_data["name"], instance_data["instance_type"])
+        response = (self
+                    .__instance_api
+                    .instance_manager
+                    .create_instance(instance_data["name"], instance_data["instance_type"]))
 
         return response
 
@@ -131,7 +142,7 @@ class Engine:
                     .message("Forbidden!")
                     .build())
 
-        instance = self.__instance_manager.get_instance_by_id(instance_data["instance_id"])
+        instance = self.__instance_api.instance_manager.get_instance_by_id(instance_data["instance_id"])
         if instance is None:
             return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Instance not found!").build()
 
@@ -150,7 +161,7 @@ class Engine:
         if user is None:
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
-        instances = self.__instance_manager.instances
+        instances = self.__instance_api.instance_manager.instances
         instances_out = []
 
         user_id = user.user_id
@@ -272,3 +283,7 @@ class Engine:
     @property
     def user_manager(self) -> UserManager:
         return self.__user_manager
+
+    @property
+    def debug(self) -> bool:
+        return self.__debug

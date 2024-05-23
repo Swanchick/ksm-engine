@@ -1,11 +1,9 @@
-from engine import Engine
+from server.instance_arguments import InstanceArguments
 
-engine = Engine()
 
-message = {"say": "Hello World"}
-encrypted_message = engine.encrypt_data(message)
-print(encrypted_message)
+instance_arguments = InstanceArguments()
+instance_arguments.start()
 
-data = {"data": encrypted_message}
-decrypted_message = engine.decrypt_data(data)
-print(decrypted_message)
+args = instance_arguments.get_arguments(1)
+for arg in args:
+    print(arg[0])

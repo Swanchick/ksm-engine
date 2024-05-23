@@ -18,7 +18,7 @@ class FileSystem:
 
             full_path += f"/{f}"
 
-        return self.__instance_folder + full_path[1:] + file_name
+        return self.__instance_folder + full_path[1:] + "/" + file_name
 
     @staticmethod
     def __check_folders_access(path: Tuple[str, ...]) -> bool:
@@ -33,6 +33,8 @@ class FileSystem:
             return
 
         path = self.__build_path(file_name, folders)
+        print(path)
+
         if not isfile(path):
             return
 

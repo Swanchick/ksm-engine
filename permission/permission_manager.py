@@ -15,9 +15,14 @@ class PermissionManager(Database):
         self.__saved_permissions = []
 
         self._connect(KSM_DATABASE)
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS permissions (user_id INTEGER,"
-                             "instance_id INTEGER NOT NULL,"
-                             "permission INTEGER DEFAULT 0)")
+
+        self._cursor.execute("CREATE TABLE IF NOT EXISTS permissions ("
+                             "user_id INTEGER,"
+                             "instance_id INTEGER,"
+                             "permission INTEGER,"
+                             "FOREIGN KEY (user_id) REFERENCES users(user_id),"
+                             "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
+                             ")")
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
         self._connect(KSM_DATABASE)

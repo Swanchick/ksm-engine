@@ -3,19 +3,18 @@ from subprocess import Popen, PIPE
 from typing import List, Optional, Dict
 from permission.permission_manager import PermissionManager
 from permission.permissions import Permissions
-from .state import ServerState
-from .output import ServerOutput, OutputType
+from server.enums.state import ServerState
+from server.enums.output import ServerOutput, OutputType
 from .settings_instance import InstanceSettings
 from threading import Thread
 from settings.settings_creator import SettingsCreator
 from settings.abstract_settings import AbstractSettings
-from api.instance_caller import InstanceCaller
+from api.instance_caller import InstanceCaller, register_call
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 from files.folder_system import FolderSystem
 from files.file_system import FileSystem
 from psutil import Process
-from .instance_exception import InstanceException
 
 SETTING_FILE = "ksm_settings.json"
 MAX_OUTPUT_MESSAGES = 100
@@ -27,6 +26,10 @@ class ServerInstance(InstanceCaller):
     __folder: str
     __settings: InstanceSettings
 
+    __cmd: str
+    __docker_image: str
+    __arguments: str
+
     __process: Optional[Popen]
     __output: List[ServerOutput]
     __server_state: ServerState
@@ -35,39 +38,17 @@ class ServerInstance(InstanceCaller):
     __file_system: FileSystem
 
     def __init__(self, permission_manager: PermissionManager, instance_id: int, name: str, instance_folder: str):
-        super().__init__(permission_manager)
+        super().__init__(self, instance_id, permission_manager)
 
         self.__id = instance_id
         self.__name = name
         self.__folder = instance_folder
         self.__output = []
-        self.__server_process = True
         self.__server_state = ServerState.STOP
         self.__settings: AbstractSettings
 
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)
-
-        self.__init_api()
-
-    def __init_api(self):
-        self._register("server_start", self.start, self.__id, Permissions.INSTANCE_START_STOP)
-        self._register("server_stop", self.stop, self.__id, Permissions.INSTANCE_START_STOP)
-
-        self._register("server_send", self.send, self.__id, Permissions.INSTANCE_CONSOLE)
-        self._register("get_output", self.get_output, self.__id, Permissions.INSTANCE_CONSOLE)
-
-        self._register("get_folders", self.get_folders, self.__id, Permissions.FILES_SHOW)
-        self._register("create_folder", self.create_folder, self.__id, Permissions.FILES_CREATE)
-        self._register("delete_folder", self.delete_folder, self.__id, Permissions.FILES_REMOVE)
-        self._register("open_file", self.open_file, self.__id, Permissions.FILES_EDIT_VIEW)
-        self._register("create_file", self.create_file, self.__id, Permissions.FILES_CREATE)
-        self._register("delete_file", self.delete_file, self.__id, Permissions.FILES_REMOVE)
-        self._register("write_file", self.write_file, self.__id, Permissions.FILES_EDIT_VIEW)
-
-        self._register("get_permissions", self.get_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
-        self._register("add_permission", self.add_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
-        self._register("remove_permission", self.remove_permission, self.__id, Permissions.INSTANCE_PERMISSION_EDIT)
 
     def __monitor_server(self):
         if not self.__process:
@@ -114,6 +95,11 @@ class ServerInstance(InstanceCaller):
     def __setup(self):
         self.__settings = SettingsCreator(f"{self.__folder}{SETTING_FILE}").settings("instance")
 
+    @register_call("test", Permissions.INSTANCE_VIEW)
+    def test(self):
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works").build()
+
+    @register_call("server_start", Permissions.INSTANCE_START_STOP)
     def start(self):
         if self.__server_state == ServerState.START:
             logging.error("Server already started")
@@ -126,13 +112,13 @@ class ServerInstance(InstanceCaller):
         try:
             self.__setup()
         except Exception:
-            raise InstanceException("ksm_settings.json either doesn't exist or is invalid!")
+            raise Exception("ksm_settings.json either doesn't exist or is invalid!")
 
         command = [self.__settings.program] + self.__settings.arguments
         try:
             self.__process = Popen(command, cwd=self.__folder, stdout=PIPE, stdin=PIPE, stderr=PIPE)
         except Exception:
-            raise InstanceException("There is a problem running instance!")
+            raise Exception("There is a problem running instance!")
 
         self.__server_state = ServerState.START
 
@@ -151,12 +137,13 @@ class ServerInstance(InstanceCaller):
                 .message("Server has been successfully started.")
                 .build())
 
+    @register_call("server_send", Permissions.INSTANCE_CONSOLE)
     def send(self, request: str) -> Dict:
         try:
             self.__process.stdin.write(f"{request}\n".encode("utf-8"))
             self.__process.stdin.flush()
         except Exception:
-            raise InstanceException("Cannot send command to process!")
+            raise Exception("Cannot send command to process!")
 
         logging.info(f"Client has sent command \"{request}\" to process.")
 
@@ -165,6 +152,7 @@ class ServerInstance(InstanceCaller):
                 .message("Message has been sent.")
                 .build())
 
+    @register_call("server_stop", Permissions.INSTANCE_START_STOP)
     def stop(self) -> Dict:
         if not self.__process:
             return (ResponseBuilder()
@@ -183,7 +171,7 @@ class ServerInstance(InstanceCaller):
 
             logging.info(f"Server Instance: {self.__name} has been stopped.")
         except Exception as e:
-            raise InstanceException("Cannot stop instance! Probably it is not running!")
+            raise Exception("Cannot stop instance! Probably it is not running!")
 
         self.__server_state = ServerState.STOP
         self.__output = []
@@ -193,6 +181,7 @@ class ServerInstance(InstanceCaller):
                 .message("Server has been successfully stopped.")
                 .build())
 
+    @register_call("get_output", Permissions.INSTANCE_CONSOLE)
     def get_output(self) -> Dict:
         outputs = []
         for output in self.__output:
@@ -205,11 +194,12 @@ class ServerInstance(InstanceCaller):
                 .addition_data("instance", {"output": outputs})
                 .build())
 
+    @register_call("get_folders", Permissions.FILES_SHOW)
     def get_folders(self, *folders) -> Dict:
         try:
             files = self.__folder_system.open_folder(*folders)
         except Exception:
-            raise InstanceException("There is a problem opening folder!")
+            raise Exception("There is a problem opening folder!")
 
         if files is None:
             return (ResponseBuilder()
@@ -223,87 +213,96 @@ class ServerInstance(InstanceCaller):
                 .addition_data("folders", files)
                 .build())
 
+    @register_call("create_folder", Permissions.FILES_CREATE)
     def create_folder(self, *folders) -> Dict:
         try:
             self.__folder_system.create_folder(*folders)
         except Exception:
-            raise InstanceException("There is a problem creating folder!")
+            raise Exception("There is a problem creating folder!")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .message("Folder has been created successfully!")
                 .build())
 
+    @register_call("delete_folder", Permissions.FILES_REMOVE)
     def delete_folder(self, *folders) -> Dict:
         try:
             self.__folder_system.delete_folder(*folders)
         except Exception:
-            raise InstanceException("There is a problem deleting folder!")
+            raise Exception("There is a problem deleting folder!")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .message("Folder has been successfully deleted!")
                 .build())
 
+    @register_call("open_file", Permissions.FILES_EDIT_VIEW)
     def open_file(self, file_name, *folders) -> Dict:
         try:
             data = self.__file_system.open_file(file_name, *folders)
         except Exception:
-            raise InstanceException("There is a problem opening file!")
+            raise Exception("There is a problem opening file!")
 
         if data is None:
             return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("File not found!").build()
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message(data).build()
 
+    @register_call("create_file", Permissions.FILES_CREATE)
     def create_file(self, file_name, *folders) -> Dict:
         try:
             self.__file_system.create_file(file_name, *folders)
         except Exception:
-            raise InstanceException("There is a problem creating file!")
+            raise Exception("There is a problem creating file!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been created!").build()
 
+    @register_call("delete_file", Permissions.FILES_REMOVE)
     def delete_file(self, file_name, *folders) -> Dict:
         try:
             self.__file_system.delete_file(file_name, *folders)
         except Exception:
-            raise InstanceException("There is a problem deleting file!")
+            raise Exception("There is a problem deleting file!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been deleted!").build()
 
+    @register_call("write_file", Permissions.FILES_EDIT_VIEW)
     def write_file(self, file_name, data, *folders) -> Dict:
         try:
             self.__file_system.write_file(file_name, data, *folders)
         except Exception:
-            raise InstanceException("There is a problem writing file!")
+            raise Exception("There is a problem writing file!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been changed!").build()
 
+    @register_call("get_permissions", Permissions.INSTANCE_PERMISSION_EDIT)
     def get_permission(self) -> Dict:
         try:
             permissions = self._permission_manager.get_all_permissions_from_instance(self.__id)
         except Exception:
-            raise InstanceException("There is a problem getting permissions!")
+            raise Exception("There is a problem getting permissions!")
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .addition_data("users", permissions)
                 .build())
 
+    @register_call("add_permission", Permissions.INSTANCE_PERMISSION_EDIT)
     def add_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
             self._permission_manager.add_permission(user_id, self.__id, permission_type)
         except Exception:
-            raise InstanceException("There is a problem adding permission!")
+            raise Exception("There is a problem adding permission!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been added!").build()
 
+    @register_call("remove_permission", Permissions.INSTANCE_PERMISSION_EDIT)
     def remove_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
             self._permission_manager.remove_permission(user_id, self.__id, permission_type)
         except Exception:
-            raise InstanceException("There is a problem removing permission!")
+            raise Exception("There is a problem removing permission!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been removed!").build()
 

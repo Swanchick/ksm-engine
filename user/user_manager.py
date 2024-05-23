@@ -9,9 +9,10 @@ KSM_DATABASE = "ksm_database"
 class UserManager(AbstractUserManager, Database):
     def start(self):
         self._connect(KSM_DATABASE)
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY AUTO_INCREMENT,"
+        self._cursor.execute("CREATE TABLE IF NOT EXISTS users ("
+                             "user_id INT PRIMARY KEY AUTO_INCREMENT,"
                              "name TEXT,"
-                             "password text,"
+                             "password TEXT,"
                              "administrator BOOLEAN DEFAULT false)")
 
     def create_user(self, name: str, password: str, administrator: bool):
@@ -44,7 +45,7 @@ class UserManager(AbstractUserManager, Database):
 
         self._connect(KSM_DATABASE)
 
-        self._cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        self._cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
 
         user_data = self._cursor.fetchone()
         if not user_data:

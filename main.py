@@ -154,6 +154,11 @@ def main():
 
         return
 
+    if engine.debug:
+        app.run(port=engine.port)
+
+        return
+
     engine.start(app)
 
 

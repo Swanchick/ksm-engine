@@ -24,3 +24,4 @@ Flask[async]
 psutil
 gitpython
 waitress
+docker

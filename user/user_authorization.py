@@ -26,7 +26,7 @@ class UserAuthorization:
 
     def get_authorized_user(self, key: str) -> Optional[User]:
         if key == "debug":
-            return self.__user_manager.get_user_by_id(4)
+            return self.__user_manager.get_user_by_id(1)
 
         if key not in self.__authorized_users:
             return
