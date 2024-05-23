@@ -31,16 +31,16 @@ class InstanceApi(Api):
         instance_id = int(instance_data["instance_id"])
         instance = self.__instance_manager.get_instance_by_id(instance_id)
 
-        if not instance:
+        if instance is None:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Instance not found")
                     .build())
 
         args = instance_data["args"] if "args" in instance_data else []
-        kwargs = instance_data["kwargs"] if "kwargs" in instance_data else {}
 
-        output_data = instance.call(method_name, instance_data["user_id"], *args, **kwargs)
+        output_data = instance.call(
+            method_name, instance_data["user_id"], *args)
 
         return output_data
 

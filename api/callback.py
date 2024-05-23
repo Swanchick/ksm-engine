@@ -2,22 +2,16 @@ from permission.permissions import Permissions
 
 
 class Callback:
-    __name: str
-    __permission: Permissions
+    _name: str
     _callback: callable
 
-    def __init__(self, name: str, callback: callable, permission: Permissions):
-        self.__name = name
+    def __init__(self, name: str, callback: callable):
+        self._name = name
         self._callback = callback
-        self.__permission = permission
 
     def call(self, *args, **kwargs):
         return self._callback(*args, **kwargs)
 
     @property
     def name(self):
-        return self.__name
-
-    @property
-    def permission(self) -> Permissions:
-        return self.__permission
+        return self._name

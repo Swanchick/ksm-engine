@@ -1,18 +1,21 @@
-from typing import List, Dict, Optional
+from typing import List, Optional
 from permission.permission_manager import PermissionManager
 from .instance import ServerInstance
-from api.api import Api
+from .instance_arguments import InstanceArguments
 from database_utils.database import Database
 from .instance_loader import InstanceLoader
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
+from server.controllers.instance_manager_controller import InstanceManagerController
+
 
 KSM_DATABASE = "ksm_database"
 
 
-class InstanceManager(Database, Api):
+class InstanceManager(Database, InstanceManagerController):
     __instances: List[ServerInstance]
     __permission_manager: PermissionManager
+    __instance_arguments: InstanceArguments
     __instance_folder: str
 
     def __load_instance(self, instance_id: int, instance_name, instance_folder: str) -> ServerInstance:
@@ -33,8 +36,12 @@ class InstanceManager(Database, Api):
         self.__instances = []
         self._connect(KSM_DATABASE)
 
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS instances (id INT PRIMARY KEY AUTO_INCREMENT, "
-                             "name CHAR(128) UNIQUE)")
+        self._cursor.execute("CREATE TABLE IF NOT EXISTS instances ("
+                             "instance_id INT PRIMARY KEY AUTO_INCREMENT,"
+                             "name CHAR(128) UNIQUE,"
+                             "docker_image CHAR(128),"
+                             "cmd CHAR(128)"
+                             ")")
 
     def create_instance(self, name: str, instance_type: str):
         if not (self._connector and self._cursor):
@@ -57,7 +64,7 @@ class InstanceManager(Database, Api):
 
         self._cursor.execute("INSERT INTO instances (name) VALUES (%s)", (name, ))
         self._connector.commit()
-        self._cursor.execute("SELECT id FROM instances WHERE name = %s", (name, ))
+        self._cursor.execute("SELECT instance_id FROM instances WHERE name = %s", (name, ))
         instance_id = self._cursor.fetchone()[0]
         instance_folder = self.__generate_folder(name)
 
@@ -83,20 +90,6 @@ class InstanceManager(Database, Api):
             instance_folder = self.__generate_folder(instance_name)
 
             self.__load_instance(instance_id, instance_name, instance_folder)
-
-    def request(self, method_name: str, instance_data: Dict) -> Optional[Dict]:
-        instance_id = int(instance_data["instance_id"])
-        instance = self.get_instance_by_id(instance_id)
-
-        if not instance:
-            return ResponseBuilder().status(500).message("Instance not found").build()
-
-        args = instance_data["args"] if "args" in instance_data else []
-        kwargs = instance_data["kwargs"] if "kwargs" in instance_data else {}
-
-        output_data = instance.call(method_name, instance_data["user_id"], *args, **kwargs)
-
-        return output_data
 
     @property
     def instances(self) -> List[ServerInstance]:
