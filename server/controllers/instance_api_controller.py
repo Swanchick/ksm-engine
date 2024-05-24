@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from server.instance_arguments import InstanceArguments
+from typing import Optional
 
 
 class InstanceApiController(ABC):
-    @abstractmethod
-    def instance_arguments(self) -> InstanceArguments:
-        pass
+    @property
+    def instance_arguments(self) -> Optional[InstanceArguments]:
+        return

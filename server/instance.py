@@ -6,7 +6,6 @@ from permission.permissions import Permissions
 from .enums.state import ServerState
 from .enums.output import ServerOutput, OutputType
 from threading import Thread
-from settings.settings_creator import SettingsCreator
 from .api.instance_caller import InstanceCaller
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
@@ -14,7 +13,6 @@ from files.folder_system import FolderSystem
 from files.file_system import FileSystem
 from psutil import Process
 
-SETTING_FILE = "ksm_settings.json"
 MAX_OUTPUT_MESSAGES = 100
 
 
@@ -33,14 +31,26 @@ class ServerInstance(InstanceCaller):
     __folder_system: FolderSystem
     __file_system: FileSystem
 
-    def __init__(self, permission_manager: PermissionManager, instance_id: int, name: str, instance_folder: str):
+    def __init__(
+            self,
+            permission_manager: PermissionManager,
+            instance_id: int,
+            instance_name: str,
+            instance_cmd: str,
+            instance_arguments: List[str],
+            instance_folder: str
+    ):
         super().__init__(self, instance_id, permission_manager)
 
         self.__id = instance_id
-        self.__name = name
+        self.__name = instance_name
+        self.__cmd = instance_cmd
+        self.__arguments = instance_arguments
         self.__folder = instance_folder
         self.__output = []
         self.__server_state = ServerState.STOP
+
+        self.__process = None
 
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)
@@ -75,18 +85,6 @@ class ServerInstance(InstanceCaller):
 
             self.__add_message(message, OutputType.TEXT)
 
-    def __get_err(self):
-        if not self.__process:
-            return
-
-        while self.__server_state == ServerState.START:
-            message = self.__process.stderr.readline().decode("utf-8")
-
-            if message == "":
-                return
-
-            self.__add_message(message, OutputType.ERR)
-
     @InstanceCaller.register("test", Permissions.INSTANCE_VIEW)
     def test(self):
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works").build()
@@ -111,11 +109,9 @@ class ServerInstance(InstanceCaller):
 
         thread_monitor_server = Thread(target=self.__monitor_server)
         thread_get_output = Thread(target=self.__get_output)
-        thread_get_err = Thread(target=self.__get_err)
 
         thread_monitor_server.start()
         thread_get_output.start()
-        thread_get_err.start()
 
         logging.info(f"Server Instance: {self.__name} has been started with pid {self.__process.pid}.")
 

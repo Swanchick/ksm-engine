@@ -1,11 +1,12 @@
 {
     "engine": {
-        "ip": "<Engine's ip>",
+        "ip": "127.0.0.1",
         "port": 52146,
-        "name": "<Engine name>",
-        "server_instances_folder": "<Instance folder>",
-        "password": "<Password>",
-        "secret_key": "<Secret key>"
+        "name": "Engine",
+        "server_instances_folder": "E:/ksm/ksm-instances/",
+        "password": "12345678",
+        "secret_key": "UXCnaUui8h64bYKBl_kVQDExKNHA9FVi4r4Swe7T3Xw=",
+        "debug": true
     },
     "database": {
         "ip": "127.0.0.1",

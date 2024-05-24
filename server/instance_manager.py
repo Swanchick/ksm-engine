@@ -1,7 +1,7 @@
 from typing import List, Optional
 from permission.permission_manager import PermissionManager
 from .instance import ServerInstance
-from .instance_arguments import InstanceArguments
+from .controllers.instance_api_controller import InstanceApiController
 from database_utils.database import Database
 from .instance_loader import InstanceLoader
 from utils.response_builder import ResponseBuilder
@@ -15,11 +15,33 @@ KSM_DATABASE = "ksm_database"
 class InstanceManager(Database, InstanceManagerController):
     __instances: List[ServerInstance]
     __permission_manager: PermissionManager
-    __instance_arguments: InstanceArguments
     __instance_folder: str
+    __instance_api: InstanceApiController
 
-    def __load_instance(self, instance_id: int, instance_name, instance_folder: str) -> ServerInstance:
-        instance = ServerInstance(self.__permission_manager, instance_id, instance_name, instance_folder)
+    def __init__(self, instance_api: InstanceApiController, *args, **kwargs):
+        self.__instance_api = instance_api
+
+        super().__init__(*args, **kwargs)
+
+    def __load_instance(
+            self,
+            instance_id: int,
+            instance_name: str,
+            instance_cmd: str,
+            instance_folder: str
+    ) -> ServerInstance:
+        instance_arguments = self.__instance_api.instance_arguments.get_arguments(instance_id)
+
+        print(instance_arguments)
+
+        instance = ServerInstance(
+            self.__permission_manager,
+            instance_id,
+            instance_name,
+            instance_cmd,
+            instance_arguments,
+            instance_folder
+        )
         self.__instances.append(instance)
 
         return instance
@@ -39,7 +61,7 @@ class InstanceManager(Database, InstanceManagerController):
         self._cursor.execute("CREATE TABLE IF NOT EXISTS instances ("
                              "instance_id INT PRIMARY KEY AUTO_INCREMENT,"
                              "name CHAR(128) UNIQUE,"
-                             "docker_image CHAR(128),"
+                             "folder_name CHAR(128) UNIQUE,"
                              "cmd CHAR(128)"
                              ")")
 
@@ -87,9 +109,11 @@ class InstanceManager(Database, InstanceManagerController):
         for instance_data in instances:
             instance_id = instance_data[0]
             instance_name = instance_data[1]
-            instance_folder = self.__generate_folder(instance_name)
+            instance_folder_name = instance_data[2]
+            instance_cmd = instance_data[3]
+            instance_folder = self.__generate_folder(instance_folder_name)
 
-            self.__load_instance(instance_id, instance_name, instance_folder)
+            self.__load_instance(instance_id, instance_name, instance_cmd, instance_folder)
 
     @property
     def instances(self) -> List[ServerInstance]:

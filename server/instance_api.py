@@ -6,9 +6,10 @@ from .instance_manager import InstanceManager
 from .instance_arguments import InstanceArguments
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
+from .controllers.instance_api_controller import InstanceApiController
 
 
-class InstanceApi(Api):
+class InstanceApi(Api, InstanceApiController):
     __instances: List[ServerInstance]
 
     __instance_folder: str
@@ -23,7 +24,7 @@ class InstanceApi(Api):
         self.__instance_arguments = InstanceArguments()
         self.__instance_arguments.start()
 
-        self.__instance_manager = InstanceManager()
+        self.__instance_manager = InstanceManager(self)
         self.__instance_manager.load_folder(self.__instance_folder)
         self.__instance_manager.start()
 
