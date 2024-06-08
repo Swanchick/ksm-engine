@@ -1,8 +1,13 @@
 from utils.repo_downloader import RepoDownloader
 from settings.settings_creator import SettingsCreator
+from os import mkdir
+from os.path import isdir
+from enum import Enum
 
 
-INSTANCE_PACKAGES = "instance_packages"
+class LoadState(Enum):
+    SUCCESS = 0
+    FOLDER_ALREADY_EXISTS = 1
 
 
 class InstanceLoader:
@@ -11,27 +16,16 @@ class InstanceLoader:
     __repo_url: str
     __instance_folder: str
 
-    def __init__(self, instance_folder: str, name: str, instance_type: str):
+    def __init__(self, instance_folder: str, name: str):
         self.__name = name
-        self.__instance_type = instance_type
         self.__instance_folder = instance_folder
 
-    def start(self) -> bool:
-        settings_creator = SettingsCreator()
-        data = settings_creator.data()
-        if INSTANCE_PACKAGES not in data:
-            return False
-
-        instance_packages = data[INSTANCE_PACKAGES]
-        if self.__instance_type not in instance_packages:
-            return False
-
-        self.__repo_url = instance_packages[self.__instance_type]
-
-        return True
-
-    def load(self):
+    def load(self) -> LoadState:
         path = f"{self.__instance_folder}{self.__name}/"
 
-        repo_downloader = RepoDownloader(self.__repo_url, path)
-        repo_downloader.download()
+        try:
+            mkdir(path)
+        except FileExistsError:
+            return LoadState.SUCCESS
+
+        return LoadState.SUCCESS

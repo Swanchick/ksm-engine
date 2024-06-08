@@ -30,7 +30,6 @@ class Engine:
         self.__debug = self.__engine_settings.debug
 
         self.__cryptography = Fernet(self.__engine_settings.secret_key)
-
         self.__instance_api = InstanceApi(self.__engine_settings.instance_folder)
 
         self.__user_manager = UserManager()
@@ -84,7 +83,6 @@ class Engine:
             return
 
         print("KSM Engine has been successfully started.")
-        print(f"Running on http://{self.ip}:{self.port}/")
 
         serve(app, host=self.ip, port=self.port)
 
@@ -117,10 +115,13 @@ class Engine:
         instance_data = data["instance_data"]
         instance_data["user_id"] = user.user_id
 
-        response = (self
-                    .__instance_api
+        response = (self.__instance_api
                     .instance_manager
-                    .create_instance(instance_data["name"], instance_data["instance_type"]))
+                    .create_instance(
+                        instance_data["name"],
+                        instance_data["docker_image"],
+                        instance_data["cmd"]
+                    ))
 
         return response
 

@@ -3,33 +3,27 @@ from .user import User
 from typing import List, Optional, Dict
 from .user_manager_abstract import AbstractUserManager
 
-KSM_DATABASE = "ksm_database"
-
 
 class UserManager(AbstractUserManager, Database):
     def start(self):
-        self._connect(KSM_DATABASE)
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS users ("
-                             "user_id INT PRIMARY KEY AUTO_INCREMENT,"
-                             "name TEXT,"
-                             "password TEXT,"
-                             "administrator BOOLEAN DEFAULT false)")
+        self._execute("CREATE TABLE IF NOT EXISTS users ("
+                      "user_id INT PRIMARY KEY AUTO_INCREMENT,"
+                      "name TEXT,"
+                      "password TEXT,"
+                      "administrator BOOLEAN DEFAULT false)"
+                      )
 
     def create_user(self, name: str, password: str, administrator: bool):
-        self._connect(KSM_DATABASE)
-
         user = User(name, password, administrator)
 
-        self._cursor.execute("INSERT INTO users (name, password, administrator) VALUES (%s, %s, %s)",
-                             (user.name, user.password, user.is_administrator))
-        self._connector.commit()
+        self._execute("INSERT INTO users (name, password, administrator) VALUES (%s, %s, %s)",
+                      (user.name, user.password, user.is_administrator))
+        self._commit()
 
         return user
 
     def get_users(self) -> Optional[List[Dict]]:
-        self._connect(KSM_DATABASE)
-
-        self._cursor.execute("SELECT * FROM users")
+        self._execute("SELECT * FROM users")
 
         users = []
 
@@ -43,11 +37,9 @@ class UserManager(AbstractUserManager, Database):
         if user_id is None:
             return
 
-        self._connect(KSM_DATABASE)
+        self._execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
 
-        self._cursor.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
-
-        user_data = self._cursor.fetchone()
+        user_data = self._fetchone()
         if not user_data:
             return
 
@@ -59,11 +51,9 @@ class UserManager(AbstractUserManager, Database):
         if name is None:
             return
 
-        self._connect(KSM_DATABASE)
+        self._execute("SELECT * FROM users WHERE name = %s", (name, ))
 
-        self._cursor.execute("SELECT * FROM users WHERE name = %s", (name, ))
-
-        user_data = self._cursor.fetchone()
+        user_data = self._fetchone()
         if not user_data:
             return
 

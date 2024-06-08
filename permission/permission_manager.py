@@ -14,47 +14,39 @@ class PermissionManager(Database):
     def start(self):
         self.__saved_permissions = []
 
-        self._connect(KSM_DATABASE)
-
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS permissions ("
-                             "user_id INTEGER,"
-                             "instance_id INTEGER,"
-                             "permission INTEGER,"
-                             "FOREIGN KEY (user_id) REFERENCES users(user_id),"
-                             "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
-                             ")")
+        self._execute("CREATE TABLE IF NOT EXISTS permissions ("
+                      "user_id INTEGER,"
+                      "instance_id INTEGER,"
+                      "permission INTEGER,"
+                      "FOREIGN KEY (user_id) REFERENCES users(user_id),"
+                      "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
+                      ")"
+                      )
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
-        self._connect(KSM_DATABASE)
+        self._execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",
+                      (user_id, instance_id)
+                      )
 
-        self._cursor.execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",
-                             (user_id, instance_id))
-
-        result = self._cursor.fetchone()
+        result = self._fetchone()
         return result[0] > 0
 
     def __new_permission(self, user_id: int, instance_id: int):
-        self._connect(KSM_DATABASE)
+        self._execute("INSERT INTO permissions (user_id, instance_id) VALUES (%s, %s)", (user_id, instance_id))
 
-        self._cursor.execute("INSERT INTO permissions (user_id, instance_id) VALUES (%s, %s)", (user_id, instance_id))
-
-        self._connector.commit()
+        self._commit()
 
     def __update_permission(self, user_id: int, instance_id: int, permission: int):
-        self._connect(KSM_DATABASE)
-
-        self._cursor.execute("UPDATE permissions SET permission = %s WHERE user_id = %s AND instance_id = %s",
-                             (permission, user_id, instance_id))
-
-        self._connector.commit()
+        self._execute("UPDATE permissions SET permission = %s WHERE user_id = %s AND instance_id = %s",
+                      (permission, user_id, instance_id)
+                      )
 
     def __get_permission(self, user_id: int, instance_id: int):
-        self._connect(KSM_DATABASE)
+        self._execute("SELECT permission FROM permissions WHERE user_id = %s AND instance_id = %s",
+                      (user_id, instance_id)
+                      )
 
-        self._cursor.execute("SELECT permission FROM permissions WHERE user_id = %s AND instance_id = %s",
-                             (user_id, instance_id))
-
-        result = self._cursor.fetchone()
+        result = self._fetchone()
         if result is None:
             return
 
@@ -85,8 +77,6 @@ class PermissionManager(Database):
 
     def __check_permission(self, permission: int, permission_to_check: int) -> bool:
         permissions = self.__break_into_permissions(permission)
-
-        print(permissions)
 
         return permission_to_check in permissions
 
@@ -159,12 +149,12 @@ class PermissionManager(Database):
     def get_all_permissions_from_instance(self, instance_id: int) -> Optional[List[Dict]]:
         self._connect(KSM_DATABASE)
 
-        self._cursor.execute("SELECT * "
+        self._execute("SELECT * "
                              "FROM permissions "
                              "WHERE instance_id = %s",
                              (instance_id, ))
 
-        data = self._cursor.fetchall()
+        data = self._fetchall()
         output_data = []
 
         for permissions in data:

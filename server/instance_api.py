@@ -21,12 +21,12 @@ class InstanceApi(Api, InstanceApiController):
     def __init__(self, instance_folder: str):
         self.__instance_folder = instance_folder
 
-        self.__instance_arguments = InstanceArguments()
-        self.__instance_arguments.start()
-
         self.__instance_manager = InstanceManager(self)
         self.__instance_manager.load_folder(self.__instance_folder)
         self.__instance_manager.start()
+
+        self.__instance_arguments = InstanceArguments()
+        self.__instance_arguments.start()
 
     def request(self, method_name: str, instance_data: Dict) -> Optional[Dict]:
         instance_id = int(instance_data["instance_id"])

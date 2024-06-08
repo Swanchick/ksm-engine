@@ -1,6 +1,5 @@
 import logging
-from subprocess import Popen, PIPE
-from typing import List, Optional, Dict
+from typing import List, Dict
 from permission.permission_manager import PermissionManager
 from permission.permissions import Permissions
 from .enums.state import ServerState
@@ -11,20 +10,26 @@ from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 from files.folder_system import FolderSystem
 from files.file_system import FileSystem
-from psutil import Process
+from docker import DockerClient
+from docker.models.containers import Container
+from .docker_console import DockerConsole
 
 MAX_OUTPUT_MESSAGES = 100
 
 
 class ServerInstance(InstanceCaller):
+    __docker_client: DockerClient
+
     __instance_id: int
     __name: str
     __folder: str
-    __cmd: str
     __docker_image: str
+    __cmd: str
+    __opened_ports: List[int] = [50000, 50001, 25565]
     __arguments: List[str]
 
-    __process: Optional[Popen]
+    __container: Container
+    __docker_console: DockerConsole
     __output: List[ServerOutput]
     __server_state: ServerState
 
@@ -33,38 +38,30 @@ class ServerInstance(InstanceCaller):
 
     def __init__(
             self,
+            docker_client: DockerClient,
             permission_manager: PermissionManager,
             instance_id: int,
             instance_name: str,
+            instance_docker_image: str,
             instance_cmd: str,
             instance_arguments: List[str],
-            instance_folder: str
+            instance_folder: str,
     ):
         super().__init__(self, instance_id, permission_manager)
 
-        self.__id = instance_id
+        self.__docker_client = docker_client
+
+        self.__instance_id = instance_id
         self.__name = instance_name
+        self.__docker_image = instance_docker_image
         self.__cmd = instance_cmd
         self.__arguments = instance_arguments
         self.__folder = instance_folder
         self.__output = []
         self.__server_state = ServerState.STOP
 
-        self.__process = None
-
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)
-
-    def __monitor_server(self):
-        if not self.__process:
-            return
-
-        while True:
-            if self.__process.returncode is not None:
-                break
-        
-        self.__server_state = ServerState.STOP
-        self.__process = None
 
     def __add_message(self, message: str, output_type: OutputType):
         output = ServerOutput(message, output_type)
@@ -73,15 +70,9 @@ class ServerInstance(InstanceCaller):
         if len(self.__output) > MAX_OUTPUT_MESSAGES:
             self.__output.pop(0)
 
-    def __get_output(self):
-        if not self.__process:
-            return
-
-        while self.__server_state == ServerState.START:
-            message = self.__process.stdout.readline().decode("utf-8")
-
-            if message == "":
-                continue
+    def __stream_outputs(self):
+        for log in self.__container.logs(stream=True):
+            message = log.decode('utf-8')
 
             self.__add_message(message, OutputType.TEXT)
 
@@ -89,7 +80,7 @@ class ServerInstance(InstanceCaller):
     def test(self):
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works").build()
 
-    @InstanceCaller.register("server_start", Permissions.INSTANCE_START_STOP)
+    @InstanceCaller.register("start", Permissions.INSTANCE_START_STOP)
     def start(self):
         if self.__server_state == ServerState.START:
             logging.error("Server already started")
@@ -99,62 +90,66 @@ class ServerInstance(InstanceCaller):
                     .message("Server is already started")
                     .build())
 
-        command = [self.__cmd] + self.__arguments
-        try:
-            self.__process = Popen(command, cwd=self.__folder, stdout=PIPE, stdin=PIPE, stderr=PIPE)
-        except Exception:
-            raise Exception("There is a problem running instance!")
+        command = ["/bin/bash", "-c", " ".join([self.__cmd] + self.__arguments)]
+
+        self.__container = self.__docker_client.containers.run(
+            image=self.__docker_image,
+            name=self.__name,
+            command=command,
+            volumes={
+                self.__folder: {
+                    "bind": "/app",
+                    "mode": "rw"
+                }
+            },
+            ports={
+                "25565/tcp": 25565
+            },
+            working_dir="/app",
+            remove=True,
+            detach=True,
+            stdout=True,
+            stdin_open=True,
+            stderr=True
+        )
 
         self.__server_state = ServerState.START
 
-        thread_monitor_server = Thread(target=self.__monitor_server)
-        thread_get_output = Thread(target=self.__get_output)
+        self.__docker_console = DockerConsole(self.__container.id, self.__folder)
 
-        thread_monitor_server.start()
-        thread_get_output.start()
-
-        logging.info(f"Server Instance: {self.__name} has been started with pid {self.__process.pid}.")
+        stream_output_thread = Thread(target=self.__stream_outputs)
+        stream_output_thread.start()
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .message("Server has been successfully started.")
                 .build())
 
-    @InstanceCaller.register("server_send", Permissions.INSTANCE_CONSOLE)
+    @InstanceCaller.register("send", Permissions.INSTANCE_CONSOLE)
     def send(self, request: str) -> Dict:
-        try:
-            self.__process.stdin.write(f"{request}\n".encode("utf-8"))
-            self.__process.stdin.flush()
-        except Exception:
-            raise Exception("Cannot send command to process!")
+        if not self.__docker_console:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
+                    .message("Server is not running")
+                    .build())
 
-        logging.info(f"Client has sent command \"{request}\" to process.")
+        self.__docker_console.send(request)
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .message("Message has been sent.")
                 .build())
 
-    @InstanceCaller.register("server_stop", Permissions.INSTANCE_START_STOP)
+    @InstanceCaller.register("stop", Permissions.INSTANCE_START_STOP)
     def stop(self) -> Dict:
-        if not self.__process:
+        if self.__server_state == ServerState.STOP:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Server is not started")
                     .build())
 
-        try:
-            process = Process(self.__process.pid)
-            children_precesses = process.children(recursive=True)
-
-            for child in children_precesses:
-                child.terminate()
-
-            process.terminate()
-
-            logging.info(f"Server Instance: {self.__name} has been stopped.")
-        except Exception as e:
-            raise Exception("Cannot stop instance! Probably it is not running!")
+        self.__container.stop()
+        self.__docker_console.close()
 
         self.__server_state = ServerState.STOP
         self.__output = []
@@ -262,7 +257,7 @@ class ServerInstance(InstanceCaller):
     @InstanceCaller.register("get_permissions", Permissions.INSTANCE_PERMISSION_EDIT)
     def get_permission(self) -> Dict:
         try:
-            permissions = self._permission_manager.get_all_permissions_from_instance(self.__id)
+            permissions = self._permission_manager.get_all_permissions_from_instance(self.__instance_id)
         except Exception:
             raise Exception("There is a problem getting permissions!")
 
@@ -274,7 +269,7 @@ class ServerInstance(InstanceCaller):
     @InstanceCaller.register("add_permission", Permissions.INSTANCE_PERMISSION_EDIT)
     def add_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
-            self._permission_manager.add_permission(user_id, self.__id, permission_type)
+            self._permission_manager.add_permission(user_id, self.__instance_id, permission_type)
         except Exception:
             raise Exception("There is a problem adding permission!")
 
@@ -283,7 +278,7 @@ class ServerInstance(InstanceCaller):
     @InstanceCaller.register("remove_permission", Permissions.INSTANCE_PERMISSION_EDIT)
     def remove_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
-            self._permission_manager.remove_permission(user_id, self.__id, permission_type)
+            self._permission_manager.remove_permission(user_id, self.__instance_id, permission_type)
         except Exception:
             raise Exception("There is a problem removing permission!")
 
@@ -303,8 +298,12 @@ class ServerInstance(InstanceCaller):
 
     @property
     def instance_id(self):
-        return self.__id
-
+        return self.__instance_id
+    
     @property
     def dict(self) -> dict:
-        return {"instance_name": self.__name, "instance_id": self.__instance_id, "instance_state": self.__server_state.value}
+        return {
+            "instance_name": self.__name,
+            "instance_id": self.__instance_id,
+            "instance_state": self.__server_state.value
+        }

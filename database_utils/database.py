@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Optional, Tuple
 from settings.settings_creator import SettingsCreator
 from mysql.connector import connect as mysql_connect
 from abc import ABC, abstractmethod
 from .settings_database import DatabaseSettings
+
+KSM_DATABASE = "ksm_database"
 
 
 class Database(ABC):
@@ -36,6 +38,20 @@ class Database(ABC):
 
         self._connector = connect
         self._cursor = connect.cursor()
+
+    def _execute(self, query: str, args: Tuple = ()):
+        self._connect(KSM_DATABASE)
+
+        self._cursor.execute(query, args)
+
+    def _commit(self):
+        self._connector.commit()
+
+    def _fetchone(self) -> Tuple:
+        return self._cursor.fetchone()
+
+    def _fetchall(self):
+        return self._cursor.fetchall()
 
     @abstractmethod
     def start(self):
