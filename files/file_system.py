@@ -1,6 +1,7 @@
 from typing import Tuple, Optional
 from os.path import isfile, exists, isdir
 from os import remove as os_remove
+from base64 import b64decode, b64encode
 
 
 class FileSystem:
@@ -41,6 +42,19 @@ class FileSystem:
         with open(path, "r") as f:
             return f.read()
 
+    def read_bytes(self, file_name: str, *folders: str) -> Optional[bytes]:
+        if not self.__check_folders_access(folders):
+            return
+
+        path = self.__build_path(file_name, folders)
+        print(path)
+
+        if not isfile(path):
+            return
+
+        with open(path, "rb") as f:
+            return f.read()
+
     def write_file(self, file_name: str, data: str, *folders: str):
         if not self.__check_folders_access(folders):
             return
@@ -74,3 +88,23 @@ class FileSystem:
             return
 
         os_remove(path)
+
+    def receive_file_bs64(self, file_name: str, data: str, *folders: str):
+        if not self.__check_folders_access(folders):
+            return
+
+        decode_data = b64decode(data)
+
+        path = self.__build_path(file_name, folders)
+        with open(path, "wb") as f:
+            f.write(decode_data)
+            f.close()
+
+    def send_file_bs64(self, file_name: str, *folders: str) -> Optional[Tuple[str, str]]:
+        data = self.read_bytes(file_name, *folders)
+        if data is None:
+            return
+
+        encoded_data = b64encode(data).decode("utf-8")
+
+        return file_name, encoded_data

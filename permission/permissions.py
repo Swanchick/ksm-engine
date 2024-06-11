@@ -11,4 +11,6 @@ class Permissions(Enum):
     FILES_EDIT_VIEW = 64
     FILES_CREATE = 128
     FILES_REMOVE = 256
+    FILES_DOWNLOAD = 512
+    INSTANCE_PORT = 1024
     

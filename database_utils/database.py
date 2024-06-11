@@ -47,7 +47,7 @@ class Database(ABC):
     def _commit(self):
         self._connector.commit()
 
-    def _fetchone(self) -> Tuple:
+    def _fetchone(self) -> any:
         return self._cursor.fetchone()
 
     def _fetchall(self):

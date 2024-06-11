@@ -88,7 +88,6 @@ class Engine:
 
     def instance_call(self, method_name: str, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)
-
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -104,7 +103,6 @@ class Engine:
 
     def instance_create(self, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)
-
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -127,7 +125,6 @@ class Engine:
 
     def get_instance(self, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)
-
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -154,7 +151,6 @@ class Engine:
 
     def get_instances(self, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)
-
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -183,7 +179,6 @@ class Engine:
 
     def get_instance_types(self, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)
-
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
@@ -193,6 +188,47 @@ class Engine:
                 .status(HttpStatus.HTTP_SUCCESS.value)
                 .addition_data("instance_types", instance_packages)
                 .build())
+
+    def create_port(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        instance_data = data["instance_data"]
+        if "port" not in instance_data:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_BAD_REQUEST.value)
+                    .message("Port hasn't been given")
+                    .build())
+
+        result = self.__instance_api.instance_manager.create_port(instance_data["port"])
+
+        return result
+
+    def delete_port(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        instance_data = data["instance_data"]
+        if "port" not in instance_data:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_BAD_REQUEST.value)
+                    .message("Port hasn't been given")
+                    .build())
+
+        result = self.__instance_api.instance_manager.delete_port(instance_data["port"])
+
+        return result
+
+    def get_ports(self, encrypted_data: Dict) -> Dict:
+        data = self.decrypt_data(encrypted_data)
+        if not self.__check_engine_password(data):
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        result = self.__instance_api.instance_manager.get_ports()
+
+        return result
 
     def user_create(self, encrypted_data: Dict) -> Dict:
         data = self.decrypt_data(encrypted_data)

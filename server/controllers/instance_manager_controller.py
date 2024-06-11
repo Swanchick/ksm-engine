@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
-from server.instance import ServerInstance
-from typing import Optional
-from permission.permission_manager import PermissionManager
 
 
 class InstanceManagerController(ABC):
-    pass
+    @abstractmethod
+    def pin_port_to_instance(self, port: int, instance_id: int):
+        pass
+
+    @abstractmethod
+    def unpin_port_from_instance(self, port: int):
+        pass

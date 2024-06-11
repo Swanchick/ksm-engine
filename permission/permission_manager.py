@@ -14,14 +14,15 @@ class PermissionManager(Database):
     def start(self):
         self.__saved_permissions = []
 
-        self._execute("CREATE TABLE IF NOT EXISTS permissions ("
-                      "user_id INTEGER,"
-                      "instance_id INTEGER,"
-                      "permission INTEGER,"
-                      "FOREIGN KEY (user_id) REFERENCES users(user_id),"
-                      "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
-                      ")"
-                      )
+        self._execute(
+            "CREATE TABLE IF NOT EXISTS permissions ("
+            "user_id INTEGER,"
+            "instance_id INTEGER,"
+            "permission INTEGER,"
+            "FOREIGN KEY (user_id) REFERENCES users(user_id),"
+            "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
+            ")"
+        )
 
     def __row_exists(self, user_id: int, instance_id: int) -> bool:
         self._execute("SELECT COUNT(*) FROM permissions WHERE user_id = %s AND instance_id = %s",

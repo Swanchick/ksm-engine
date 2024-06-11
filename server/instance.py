@@ -13,19 +13,20 @@ from files.file_system import FileSystem
 from docker import DockerClient
 from docker.models.containers import Container
 from .docker_console import DockerConsole
+from .controllers.instance_manager_controller import InstanceManagerController
 
 MAX_OUTPUT_MESSAGES = 100
 
 
 class ServerInstance(InstanceCaller):
     __docker_client: DockerClient
+    __instance_manager: InstanceManagerController
 
     __instance_id: int
     __name: str
     __folder: str
     __docker_image: str
-    __cmd: str
-    __opened_ports: List[int] = [50000, 50001, 25565]
+    __port: int
     __arguments: List[str]
 
     __container: Container
@@ -38,27 +39,29 @@ class ServerInstance(InstanceCaller):
 
     def __init__(
             self,
+            instance_manager: InstanceManagerController,
             docker_client: DockerClient,
             permission_manager: PermissionManager,
             instance_id: int,
             instance_name: str,
             instance_docker_image: str,
-            instance_cmd: str,
             instance_arguments: List[str],
             instance_folder: str,
+            port: int
     ):
         super().__init__(self, instance_id, permission_manager)
 
+        self.__instance_manager = instance_manager
         self.__docker_client = docker_client
 
         self.__instance_id = instance_id
         self.__name = instance_name
         self.__docker_image = instance_docker_image
-        self.__cmd = instance_cmd
         self.__arguments = instance_arguments
         self.__folder = instance_folder
         self.__output = []
         self.__server_state = ServerState.STOP
+        self.__port = port
 
         self.__folder_system = FolderSystem(self.__folder)
         self.__file_system = FileSystem(self.__folder)
@@ -76,21 +79,35 @@ class ServerInstance(InstanceCaller):
 
             self.__add_message(message, OutputType.TEXT)
 
+        self.stop()
+
     @InstanceCaller.register("test", Permissions.INSTANCE_VIEW)
     def test(self):
+        print(self.port)
+
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works").build()
 
     @InstanceCaller.register("start", Permissions.INSTANCE_START_STOP)
     def start(self):
-        if self.__server_state == ServerState.START:
-            logging.error("Server already started")
+        if not self.__arguments:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_NOT_FOUND.value)
+                    .message("Arguments not set!")
+                    .build())
 
+        if self.__port == 0:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_NOT_FOUND.value)
+                    .message("Port not set!")
+                    .build())
+
+        if self.__server_state == ServerState.START:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                     .message("Server is already started")
                     .build())
 
-        command = ["/bin/bash", "-c", " ".join([self.__cmd] + self.__arguments)]
+        command = ["/bin/bash", "-c", " ".join(self.__arguments)]
 
         self.__container = self.__docker_client.containers.run(
             image=self.__docker_image,
@@ -103,7 +120,8 @@ class ServerInstance(InstanceCaller):
                 }
             },
             ports={
-                "25565/tcp": 25565
+                f"{self.__port}/tcp": self.__port,
+                f"{self.__port}/udp": self.__port
             },
             working_dir="/app",
             remove=True,
@@ -148,7 +166,11 @@ class ServerInstance(InstanceCaller):
                     .message("Server is not started")
                     .build())
 
-        self.__container.stop()
+        try:
+            self.__container.stop()
+        except Exception:
+            pass
+
         self.__docker_console.close()
 
         self.__server_state = ServerState.STOP
@@ -254,6 +276,27 @@ class ServerInstance(InstanceCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been changed!").build()
 
+    @InstanceCaller.register("download_file", Permissions.FILES_DOWNLOAD)
+    def download_file(self, file_name, *folders) -> Dict:
+        try:
+            data = self.__file_system.send_file_bs64(file_name, *folders)
+        except Exception:
+            raise Exception("There is a problem downloading file!")
+
+        return (ResponseBuilder()
+                .status(HttpStatus.HTTP_SUCCESS.value)
+                .addition_data("file", {"file_name": file_name, "data": data})
+                .build())
+
+    @InstanceCaller.register("receive_file", Permissions.FILES_DOWNLOAD)
+    def receive_file(self, file_name, data, *folders) -> Dict:
+        try:
+            self.__file_system.receive_file_bs64(file_name, data, *folders)
+        except Exception:
+            raise Exception("There is a problem receiving file!")
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been received!").build()
+
     @InstanceCaller.register("get_permissions", Permissions.INSTANCE_PERMISSION_EDIT)
     def get_permission(self) -> Dict:
         try:
@@ -284,6 +327,32 @@ class ServerInstance(InstanceCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been removed!").build()
 
+    @InstanceCaller.register("pin_port", Permissions.INSTANCE_PORT)
+    def pin_port(self, port: int) -> Dict:
+        result = self.__instance_manager.pin_port_to_instance(self.__instance_id, port)
+        if result["status"] != HttpStatus.HTTP_SUCCESS.value:
+            return result
+
+        self.__port = port
+
+        return result
+
+    @InstanceCaller.register("unpin_port", Permissions.INSTANCE_PORT)
+    def unpin_port(self) -> Dict:
+        if self.__port == 0:
+            return (ResponseBuilder()
+                    .status(HttpStatus.HTTP_BAD_REQUEST.value)
+                    .message("Instance does not have a port!")
+                    .build())
+
+        result = self.__instance_manager.unpin_port_from_instance(self.__port)
+        if result["status"] != HttpStatus.HTTP_SUCCESS.value:
+            return result
+
+        self.__port = 0
+
+        return result
+
     @property
     def instance_state(self) -> ServerState:
         return self.__server_state
@@ -305,5 +374,11 @@ class ServerInstance(InstanceCaller):
         return {
             "instance_name": self.__name,
             "instance_id": self.__instance_id,
-            "instance_state": self.__server_state.value
+            "instance_state": self.__server_state.value,
+            "port": self.__port
+
         }
+
+    @property
+    def port(self):
+        return self.__port

@@ -1,5 +1,4 @@
 from user.user_manager_abstract import AbstractUserManager
-from typing import Dict
 from settings.settings_creator import SettingsCreator
 from cryptography.fernet import Fernet
 
@@ -62,33 +61,6 @@ class InitProject:
 
         print("All settings you can change in ksm-engine/settings.json")
 
-    def __database(self):
-        settings_data = self.__setting.data()
-        print("Setting up database")
-
-        database_host = input("Database host (By default \"127.0.0.1\"): ")
-        if database_host == "":
-            database_host = "127.0.0.1"
-
-        database_port = input("Database port (By default 52146): ")
-        if database_port == "":
-            database_port = 3306
-        else:
-            database_port = int(database_port)
-
-        database_user = input("Database user (By default \"root\"): ")
-        if database_user == "":
-            database_user = "root"
-
-        database_password = input("Database password (By default \"12345678\"): ")
-        if database_password == "":
-            database_password = "12345678"
-
-        settings_data["database"]["ip"] = database_host
-        settings_data["database"]["port"] = database_port
-        settings_data["database"]["user"] = database_user
-        settings_data["database"]["password"] = database_password
-
     def start(self):
         while True:
             print("Choose an option:")
@@ -103,7 +75,5 @@ class InitProject:
                 self.__user()
             elif option == "2":
                 self.__engine()
-            elif option == "3":
-                self.__database()
             else:
                 break

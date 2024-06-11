@@ -25,6 +25,45 @@ async def instance_requests(method_name: str):
     return engine.encrypt_data(response)
 
 
+@app.route("/api/instance/port/get/", methods=["POST"])
+async def get_instance_ports():
+    if request.method != "POST":
+        return engine.encrypt_data(
+            ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+        )
+
+    data = request.json
+    response = engine.get_ports(data)
+
+    return engine.encrypt_data(response)
+
+
+@app.route("/api/instance/port/create/", methods=["POST"])
+async def create_instance_ports():
+    if request.method != "POST":
+        return engine.encrypt_data(
+            ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+        )
+
+    data = request.json
+    response = engine.create_port(data)
+
+    return engine.encrypt_data(response)
+
+
+@app.route("/api/instance/port/delete/", methods=["POST"])
+async def delete_instance_ports():
+    if request.method != "POST":
+        return engine.encrypt_data(
+            ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+        )
+
+    data = request.json
+    response = engine.delete_port(data)
+
+    return engine.encrypt_data(response)
+
+
 @app.route("/api/instance/create/", methods=["POST"])
 async def create_instance():
     if request.method != "POST":
