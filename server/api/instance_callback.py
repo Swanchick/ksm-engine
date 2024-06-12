@@ -1,5 +1,5 @@
 from api.callback import Callback
-from permission.permissions import Permissions
+from server.permission.permissions import Permissions
 
 
 class InstanceCallback(Callback):

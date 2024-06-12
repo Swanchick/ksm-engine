@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict
 from docker import DockerClient, from_env
-from permission.permission_manager import PermissionManager
+from .permission.permission_manager import PermissionManager
 from .instance import ServerInstance
 from .controllers.instance_api_controller import InstanceApiController
 from database_utils.database import Database

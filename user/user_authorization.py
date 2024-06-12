@@ -1,14 +1,14 @@
-from .user_manager import UserManager
+from .user_manager_abstract import AbstractUserManager
 from .user import User
 from typing import Dict, Optional
 from uuid import uuid4
 
 
 class UserAuthorization:
-    __user_manager: UserManager
+    __user_manager: AbstractUserManager
     __authorized_users: Dict[str, User]
 
-    def __init__(self, user_manager: UserManager):
+    def __init__(self, user_manager: AbstractUserManager):
         self.__user_manager = user_manager
         self.__authorized_users = {}
 
@@ -18,7 +18,7 @@ class UserAuthorization:
             return
 
         if not user.check_password(password):
-            return None
+            return
 
         key = str(uuid4())
         self.__authorized_users[key] = user

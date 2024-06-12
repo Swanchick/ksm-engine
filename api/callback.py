@@ -1,7 +1,7 @@
-from permission.permissions import Permissions
+from .base_api import BaseApi
 
 
-class Callback:
+class Callback(BaseApi):
     _name: str
     _callback: callable
 
@@ -9,7 +9,7 @@ class Callback:
         self._name = name
         self._callback = callback
 
-    def call(self, *args, **kwargs):
+    def request(self, *args, **kwargs):
         return self._callback(*args, **kwargs)
 
     @property

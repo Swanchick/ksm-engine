@@ -1,13 +1,13 @@
 from typing import List
-from api.caller import Caller
+from api.base_caller import BaseCaller
 from .instance_callback import InstanceCallback
-from permission.permission_manager import PermissionManager
-from permission.permissions import Permissions
+from server.permission.permission_manager import PermissionManager
+from server.permission.permissions import Permissions
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 
 
-class InstanceCaller(Caller):
+class InstanceBaseCaller(BaseCaller):
     __instance_id: int
     _permission_manager: PermissionManager
 
@@ -45,9 +45,11 @@ class InstanceCaller(Caller):
                 if not self.__check_permission(user_id, self.__instance_id, callback.permission):
                     return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
                 try:
-                    return callback.call(self._class_instance, *args)
+                    response = callback.call(self._class_instance, *args)
                 except Exception as e:
                     return (ResponseBuilder()
                             .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)
                             .message(str(e))
                             .build())
+                else:
+                    return response

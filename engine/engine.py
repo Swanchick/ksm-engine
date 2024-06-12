@@ -1,27 +1,24 @@
 from server.instance_api import InstanceApi
-from permission.permission_manager import PermissionManager
-from permission.permissions import Permissions
+from server.permission.permissions import Permissions
 from user.user_manager import UserManager
 from user.user import User
-from user.user_authorization import UserAuthorization
 from .settings_engine import EngineSettings
 from settings.settings_creator import SettingsCreator
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
-from typing import Dict
+from typing import Dict, Optional, List
 from flask import Flask
 from waitress import serve
 from cryptography.fernet import Fernet
 from json import loads, dumps
 from base64 import b64encode, b64decode
+from api import Api, ApiCaller, api_data
 
 
-class Engine:
-    __instance_api: InstanceApi
-    __user_manager: UserManager
-    __permission_manager: PermissionManager
+class Engine(Api):
     __engine_settings: EngineSettings
-    __user_authorization: UserAuthorization
+
+    __user_manager: UserManager
     __cryptography: Fernet
     __debug: bool
 
@@ -30,19 +27,12 @@ class Engine:
         self.__debug = self.__engine_settings.debug
 
         self.__cryptography = Fernet(self.__engine_settings.secret_key)
-        self.__instance_api = InstanceApi(self.__engine_settings.instance_folder)
+
+        self._caller = ApiCaller()
+        self._caller.register("instance", api=InstanceApi(self.__engine_settings.instance_folder))
 
         self.__user_manager = UserManager()
-        self.__user_manager.start()
-
-        self.__permission_manager = PermissionManager()
-        self.__permission_manager.start()
-        self.__permission_manager.load_user_manager(self.__user_manager)
-
-        self.__instance_api.instance_manager.load_permission_manager(self.__permission_manager)
-        self.__instance_api.instance_manager.load_instances()
-
-        self.__user_authorization = UserAuthorization(self.__user_manager)
+        self._caller.register("user", api=self.__user_manager)
 
     def encrypt_data(self, data: Dict) -> str:
         if self.__debug:
@@ -64,12 +54,18 @@ class Engine:
         return loads(decrypted_json)
 
     def __check_engine_password(self, data: Dict) -> bool:
+        if "password" not in data:
+            return False
+
         password = data["password"]
 
         return self.__engine_settings.check_password(password)
 
-    def __get_user_by_key(self, data: Dict) -> User:
-        user = self.__user_authorization.get_authorized_user(data["user_key"])
+    def __get_user_by_key(self, data: Dict) -> Optional[User]:
+        if "user_key" not in data:
+            return None
+
+        user = self.__user_manager.user_authorization.get_authorized_user(data["user_key"])
 
         return user
 
@@ -86,228 +82,36 @@ class Engine:
 
         serve(app, host=self.ip, port=self.port)
 
-    def instance_call(self, method_name: str, encrypted_data: Dict) -> Dict:
+    def request(self, routes: List[str], encrypted_data: Dict = None, user: User = None) -> Optional[Dict]:
+        if len(routes) == 0:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
         data = self.decrypt_data(encrypted_data)
+
         if not self.__check_engine_password(data):
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
-        user = self.__get_user_by_key(data)
-        if user is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+        api_name = routes[0]
 
-        instance_data = data["instance_data"]
-        instance_data["user_id"] = user.user_id
-        response = self.__instance_api.request(method_name, instance_data)
+        if "data" in data:
+            api_data.save("data", data["data"])
+
+        api = self._caller.get(api_name)
+        if api is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Not found!").build()
+
+        user = self.__get_user_by_key(data)
+        api_data.save("user", user)
+
+        response = self._caller.request(routes, api_name=api_name)
+        if response is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).build()
 
         return response
 
-    def instance_create(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user = self.__get_user_by_key(data)
-        if user is None or not user.is_administrator:
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instance_data = data["instance_data"]
-        instance_data["user_id"] = user.user_id
-
-        response = (self.__instance_api
-                    .instance_manager
-                    .create_instance(
-                        instance_data["name"],
-                        instance_data["docker_image"],
-                        instance_data["cmd"]
-                    ))
-
-        return response
-
-    def get_instance(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user = self.__get_user_by_key(data)
-        if user is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instance_data = data["instance_data"]
-        instance_id = instance_data["instance_id"]
-        if not self.__permission_manager.check_permission(user.user_id, instance_id, Permissions.INSTANCE_VIEW):
-            return (ResponseBuilder()
-                    .status(HttpStatus.HTTP_FORBIDDEN.value)
-                    .message("Forbidden!")
-                    .build())
-
-        instance = self.__instance_api.instance_manager.get_instance_by_id(instance_data["instance_id"])
-        if instance is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Instance not found!").build()
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .addition_data("instance_data", instance.dict)
-                .build())
-
-    def get_instances(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user = self.__get_user_by_key(data)
-        if user is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instances = self.__instance_api.instance_manager.instances
-        instances_out = []
-
-        user_id = user.user_id
-
-        for instance in instances:
-            instance_id = instance.instance_id
-
-            if not (self.__permission_manager.check_permission(user_id, instance_id, Permissions.INSTANCE_VIEW)
-                    or user.is_administrator):
-                continue
-
-            instances_out.append(instance.dict)
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .addition_data("instances", instances_out)
-                .build())
-
-    def get_instance_types(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instance_packages = SettingsCreator().data()["instance_packages"]
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .addition_data("instance_types", instance_packages)
-                .build())
-
-    def create_port(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instance_data = data["instance_data"]
-        if "port" not in instance_data:
-            return (ResponseBuilder()
-                    .status(HttpStatus.HTTP_BAD_REQUEST.value)
-                    .message("Port hasn't been given")
-                    .build())
-
-        result = self.__instance_api.instance_manager.create_port(instance_data["port"])
-
-        return result
-
-    def delete_port(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        instance_data = data["instance_data"]
-        if "port" not in instance_data:
-            return (ResponseBuilder()
-                    .status(HttpStatus.HTTP_BAD_REQUEST.value)
-                    .message("Port hasn't been given")
-                    .build())
-
-        result = self.__instance_api.instance_manager.delete_port(instance_data["port"])
-
-        return result
-
-    def get_ports(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        result = self.__instance_api.instance_manager.get_ports()
-
-        return result
-
-    def user_create(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user = self.__get_user_by_key(data)
-        if not user.is_administrator:
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user_data = data["user_data"]
-        name = user_data["name"]
-        password = user_data["password"]
-        administrator = user_data["administrator"]
-
-        self.__user_manager.create_user(name, password, administrator)
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .message("User has been created successfully!")
-                .build())
-
-    def authorize_user(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user_data = data["user_data"]
-
-        key = self.__user_authorization.authorize_user(user_data["name"], user_data["password"])
-        if not key:
-            return ResponseBuilder().status(HttpStatus.HTTP_UNAUTHORIZED.value).message("User not found!").build()
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .message("User has been authorized!")
-                .addition_data("user_data", {"key": key})
-                .build())
-
-    def get_users(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        users = self.__user_manager.get_users()
-
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
-
-    def get_user(self, encrypted_data: Dict):
-        data = self.decrypt_data(encrypted_data)
-
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        user = self.__get_user_by_key(data)
-
-        if user is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("User not found!").build()
-
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("user", user.dict).build()
-
-    def get_permissions(self, encrypted_data: Dict) -> Dict:
-        data = self.decrypt_data(encrypted_data)
-
-        if not self.__check_engine_password(data):
-            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
-
-        permissions = []
-
-        for permission in Permissions:
-            permissions.append({permission.name: permission.value})
-
-        return (ResponseBuilder()
-                .status(HttpStatus.HTTP_SUCCESS.value)
-                .addition_data("permissions", permissions)
-                .build())
+    @property
+    def user_manager(self) -> UserManager:
+        return self.__user_manager
 
     @property
     def port(self) -> int:
@@ -316,10 +120,6 @@ class Engine:
     @property
     def ip(self) -> str:
         return self.__engine_settings.ip
-
-    @property
-    def user_manager(self) -> UserManager:
-        return self.__user_manager
 
     @property
     def debug(self) -> bool:
