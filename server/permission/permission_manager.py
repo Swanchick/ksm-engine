@@ -1,15 +1,17 @@
 from database_utils.database import Database
-from user.user_manager import UserManager
+from user.user import User
 from server.permission.permissions import Permissions
 from typing import List, Optional, Dict
 from .saved_permission import SavedPermission
 
-KSM_DATABASE = "ksm_database"
-
 
 class PermissionManager(Database):
-    __user_manager: UserManager
     __saved_permissions: List[SavedPermission]
+
+    def __init__(self):
+        super().__init__()
+
+        self.start()
 
     def start(self):
         self.__saved_permissions = []
@@ -81,9 +83,6 @@ class PermissionManager(Database):
 
         return permission_to_check in permissions
 
-    def load_user_manager(self, user_manager: UserManager):
-        self.__user_manager = user_manager
-
     def __get_saved_permission(self, user_id: int, instance_id: int) -> Optional[SavedPermission]:
         for saved_permission in self.__saved_permissions:
             if saved_permission.user_id == user_id and saved_permission.instance_id == instance_id:
@@ -106,9 +105,12 @@ class PermissionManager(Database):
 
                 break
 
-    def check_permission(self, user_id: int, instance_id: int, permission_type: Permissions) -> bool:
-        if self.__is_saved_permission_exists(user_id, instance_id):
-            saved_permission = self.__get_saved_permission(user_id, instance_id)
+    def check_permission(self, user: User, instance_id: int, permission_type: Permissions) -> bool:
+        if user is None:
+            return False
+
+        if self.__is_saved_permission_exists(user.user_id, instance_id):
+            saved_permission = self.__get_saved_permission(user.user_id, instance_id)
 
             if saved_permission.is_administrator:
                 return True
@@ -121,26 +123,21 @@ class PermissionManager(Database):
         if not (self._connector and self._cursor):
             return False
 
-        user = self.__user_manager.get_user_by_id(user_id)
-
-        if user is None:
-            return False
-
         if user.is_administrator:
-            saved_permission = SavedPermission(user_id, instance_id, is_administrator=True)
+            saved_permission = SavedPermission(user.user_id, instance_id, is_administrator=True)
             self.__saved_permissions.append(saved_permission)
 
             return True
 
-        if not self.__row_exists(user_id, instance_id):
+        if not self.__row_exists(user.user_id, instance_id):
             return False
 
-        permission = self.__get_permission(user_id, instance_id)
+        permission = self.__get_permission(user.user_id, instance_id)
         if permission is None:
             return False
 
         if self.__check_permission(permission, permission_type.value):
-            saved_permission = SavedPermission(user_id, instance_id, permission=permission)
+            saved_permission = SavedPermission(user.user_id, instance_id, permission=permission)
             self.__saved_permissions.append(saved_permission)
 
             return True
@@ -148,12 +145,12 @@ class PermissionManager(Database):
         return False
 
     def get_all_permissions_from_instance(self, instance_id: int) -> Optional[List[Dict]]:
-        self._connect(KSM_DATABASE)
-
-        self._execute("SELECT * "
-                             "FROM permissions "
-                             "WHERE instance_id = %s",
-                             (instance_id, ))
+        self._execute(
+            "SELECT * "
+            "FROM permissions "
+            "WHERE instance_id = %s",
+            (instance_id, )
+        )
 
         data = self._fetchall()
         output_data = []
@@ -161,7 +158,6 @@ class PermissionManager(Database):
         for permissions in data:
             broken_permission = self.__break_into_permissions(permissions[2])
             user_id = permissions[0]
-            user = self.__user_manager.get_user_by_id(user_id)
             permission_out = []
 
             for permission in broken_permission:
@@ -171,7 +167,7 @@ class PermissionManager(Database):
 
                 permission_out.append({permission_type.name: permission})
 
-            output_data.append({'user': user.dict, "permissions": permission_out})
+            output_data.append({'user_id': user_id, "permissions": permission_out})
 
         return output_data
 

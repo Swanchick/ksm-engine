@@ -1,13 +1,11 @@
 from typing import Dict, Optional, List
-from api.api import Api
+from api import Api, ApiCaller
 from .permission.permission_manager import PermissionManager
 from .instance import ServerInstance
 from .instance_manager import InstanceManager
 from .instance_arguments import InstanceArguments
-from utils.response_builder import ResponseBuilder
-from utils.http_status import HttpStatus
+from .instances_call import InstancesCall
 from .controllers.instance_api_controller import InstanceApiController
-from user.user import User
 
 
 class InstanceApi(Api, InstanceApiController):
@@ -16,21 +14,30 @@ class InstanceApi(Api, InstanceApiController):
     __instance_folder: str
     __instance_manager: InstanceManager
     __instance_arguments: InstanceArguments
-
-    __permission_manager: PermissionManager
+    __instances_call: InstancesCall
 
     def __init__(self, instance_folder: str):
         self.__instance_folder = instance_folder
 
-        self.__instance_manager = InstanceManager(self)
-        self.__instance_manager.load_folder(self.__instance_folder)
-        self.__instance_manager.start()
+        self._caller = ApiCaller()
+
+        self.__permission_manager = PermissionManager()
+
+        self.__instance_manager = InstanceManager(self.__instance_folder, self.__permission_manager, self)
+        self._caller.register("manager", self.__instance_manager)
+
+        self.__instances_call = InstancesCall(self.__permission_manager, self.__instance_manager)
+        self._caller.register("call", self.__instances_call)
 
         self.__instance_arguments = InstanceArguments()
-        self.__instance_arguments.start()
+        self._caller.register("arguments", self.__instance_arguments)
 
-    def request(self, routes: List[str]) -> Dict:
-        pass
+        self.__instance_manager.load_instances()
+
+    def request(self, routes: List[str], *args, **kwargs) -> Dict:
+        response = self._caller.request(routes, *args, **kwargs)
+
+        return response
 
     @property
     def instance_manager(self) -> InstanceManager:

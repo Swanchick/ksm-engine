@@ -5,7 +5,6 @@ from .permission.permissions import Permissions
 from .enums.state import ServerState
 from .enums.output import ServerOutput, OutputType
 from threading import Thread
-from .api.instance_caller import InstanceBaseCaller
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 from files.folder_system import FolderSystem
@@ -14,11 +13,12 @@ from docker import DockerClient
 from docker.models.containers import Container
 from .docker_console import DockerConsole
 from .controllers.instance_manager_controller import InstanceManagerController
+from .api.instance_caller import InstanceCaller
 
 MAX_OUTPUT_MESSAGES = 100
 
 
-class ServerInstance(InstanceBaseCaller):
+class ServerInstance:
     __docker_client: DockerClient
     __instance_manager: InstanceManagerController
 
@@ -49,7 +49,7 @@ class ServerInstance(InstanceBaseCaller):
             instance_folder: str,
             port: int
     ):
-        super().__init__(self, instance_id, permission_manager)
+        self.__permission_manager = permission_manager
 
         self.__instance_manager = instance_manager
         self.__docker_client = docker_client
@@ -81,13 +81,11 @@ class ServerInstance(InstanceBaseCaller):
 
         self.stop()
 
-    @InstanceBaseCaller.register("test", Permissions.INSTANCE_VIEW)
+    @InstanceCaller.register("test", permission=Permissions.INSTANCE_VIEW)
     def test(self):
-        print(self.port)
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works!").build()
 
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works").build()
-
-    @InstanceBaseCaller.register("start", Permissions.INSTANCE_START_STOP)
+    @InstanceCaller.register("start", permission=Permissions.INSTANCE_START_STOP)
     def start(self):
         if not self.__arguments:
             return (ResponseBuilder()
@@ -143,7 +141,7 @@ class ServerInstance(InstanceBaseCaller):
                 .message("Server has been successfully started.")
                 .build())
 
-    @InstanceBaseCaller.register("send", Permissions.INSTANCE_CONSOLE)
+    @InstanceCaller.register("send", permission=Permissions.INSTANCE_CONSOLE)
     def send(self, request: str) -> Dict:
         if not self.__docker_console:
             return (ResponseBuilder()
@@ -158,7 +156,7 @@ class ServerInstance(InstanceBaseCaller):
                 .message("Message has been sent.")
                 .build())
 
-    @InstanceBaseCaller.register("stop", Permissions.INSTANCE_START_STOP)
+    @InstanceCaller.register("stop", permission=Permissions.INSTANCE_START_STOP)
     def stop(self) -> Dict:
         if self.__server_state == ServerState.STOP:
             return (ResponseBuilder()
@@ -181,7 +179,7 @@ class ServerInstance(InstanceBaseCaller):
                 .message("Server has been successfully stopped.")
                 .build())
 
-    @InstanceBaseCaller.register("get_output", Permissions.INSTANCE_CONSOLE)
+    @InstanceCaller.register("get_output", permission=Permissions.INSTANCE_CONSOLE)
     def get_output(self) -> Dict:
         outputs = []
         for output in self.__output:
@@ -194,7 +192,7 @@ class ServerInstance(InstanceBaseCaller):
                 .addition_data("instance", {"output": outputs})
                 .build())
 
-    @InstanceBaseCaller.register("get_folders", Permissions.FILES_SHOW)
+    @InstanceCaller.register("get_folders", permission=Permissions.FILES_SHOW)
     def get_folders(self, *folders) -> Dict:
         try:
             files = self.__folder_system.open_folder(*folders)
@@ -213,7 +211,7 @@ class ServerInstance(InstanceBaseCaller):
                 .addition_data("folders", files)
                 .build())
 
-    @InstanceBaseCaller.register("create_folder", Permissions.FILES_CREATE)
+    @InstanceCaller.register("create_folder", permission=Permissions.FILES_CREATE)
     def create_folder(self, *folders) -> Dict:
         try:
             self.__folder_system.create_folder(*folders)
@@ -225,7 +223,7 @@ class ServerInstance(InstanceBaseCaller):
                 .message("Folder has been created successfully!")
                 .build())
 
-    @InstanceBaseCaller.register("delete_folder", Permissions.FILES_REMOVE)
+    @InstanceCaller.register("delete_folder", permission=Permissions.FILES_REMOVE)
     def delete_folder(self, *folders) -> Dict:
         try:
             self.__folder_system.delete_folder(*folders)
@@ -237,7 +235,7 @@ class ServerInstance(InstanceBaseCaller):
                 .message("Folder has been successfully deleted!")
                 .build())
 
-    @InstanceBaseCaller.register("open_file", Permissions.FILES_EDIT_VIEW)
+    @InstanceCaller.register("open_file", permission=Permissions.FILES_EDIT_VIEW)
     def open_file(self, file_name, *folders) -> Dict:
         try:
             data = self.__file_system.open_file(file_name, *folders)
@@ -249,7 +247,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message(data).build()
 
-    @InstanceBaseCaller.register("create_file", Permissions.FILES_CREATE)
+    @InstanceCaller.register("create_file", permission=Permissions.FILES_CREATE)
     def create_file(self, file_name, *folders) -> Dict:
         try:
             self.__file_system.create_file(file_name, *folders)
@@ -258,7 +256,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been created!").build()
 
-    @InstanceBaseCaller.register("delete_file", Permissions.FILES_REMOVE)
+    @InstanceCaller.register("delete_file", permission=Permissions.FILES_REMOVE)
     def delete_file(self, file_name, *folders) -> Dict:
         try:
             self.__file_system.delete_file(file_name, *folders)
@@ -267,7 +265,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been deleted!").build()
 
-    @InstanceBaseCaller.register("write_file", Permissions.FILES_EDIT_VIEW)
+    @InstanceCaller.register("write_file", permission=Permissions.FILES_EDIT_VIEW)
     def write_file(self, file_name, data, *folders) -> Dict:
         try:
             self.__file_system.write_file(file_name, data, *folders)
@@ -276,7 +274,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been changed!").build()
 
-    @InstanceBaseCaller.register("download_file", Permissions.FILES_DOWNLOAD)
+    @InstanceCaller.register("download_file", permission=Permissions.FILES_DOWNLOAD)
     def download_file(self, file_name, *folders) -> Dict:
         try:
             data = self.__file_system.send_file_bs64(file_name, *folders)
@@ -288,7 +286,7 @@ class ServerInstance(InstanceBaseCaller):
                 .addition_data("file", {"file_name": file_name, "data": data})
                 .build())
 
-    @InstanceBaseCaller.register("receive_file", Permissions.FILES_DOWNLOAD)
+    @InstanceCaller.register("receive_file", permission=Permissions.FILES_DOWNLOAD)
     def receive_file(self, file_name, data, *folders) -> Dict:
         try:
             self.__file_system.receive_file_bs64(file_name, data, *folders)
@@ -297,7 +295,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("File has been received!").build()
 
-    @InstanceBaseCaller.register("get_permissions", Permissions.INSTANCE_PERMISSION_EDIT)
+    @InstanceCaller.register("get_permissions", permission=Permissions.INSTANCE_PERMISSION_EDIT)
     def get_permission(self) -> Dict:
         try:
             permissions = self._permission_manager.get_all_permissions_from_instance(self.__instance_id)
@@ -309,7 +307,7 @@ class ServerInstance(InstanceBaseCaller):
                 .addition_data("users", permissions)
                 .build())
 
-    @InstanceBaseCaller.register("add_permission", Permissions.INSTANCE_PERMISSION_EDIT)
+    @InstanceCaller.register("add_permission", permission=Permissions.INSTANCE_PERMISSION_EDIT)
     def add_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
             self._permission_manager.add_permission(user_id, self.__instance_id, permission_type)
@@ -318,16 +316,16 @@ class ServerInstance(InstanceBaseCaller):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been added!").build()
 
-    @InstanceBaseCaller.register("remove_permission", Permissions.INSTANCE_PERMISSION_EDIT)
+    @InstanceCaller.register("remove_permission", permission=Permissions.INSTANCE_PERMISSION_EDIT)
     def remove_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
-            self._permission_manager.remove_permission(user_id, self.__instance_id, permission_type)
+            self.__permission_manager.remove_permission(user_id, self.__instance_id, permission_type)
         except Exception:
             raise Exception("There is a problem removing permission!")
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Permission has been removed!").build()
 
-    @InstanceBaseCaller.register("pin_port", Permissions.INSTANCE_PORT)
+    @InstanceCaller.register("pin_port", permission=Permissions.INSTANCE_PORT)
     def pin_port(self, port: int) -> Dict:
         result = self.__instance_manager.pin_port_to_instance(self.__instance_id, port)
         if result["status"] != HttpStatus.HTTP_SUCCESS.value:
@@ -337,7 +335,7 @@ class ServerInstance(InstanceBaseCaller):
 
         return result
 
-    @InstanceBaseCaller.register("unpin_port", Permissions.INSTANCE_PORT)
+    @InstanceCaller.register("unpin_port", permission=Permissions.INSTANCE_PORT)
     def unpin_port(self) -> Dict:
         if self.__port == 0:
             return (ResponseBuilder()

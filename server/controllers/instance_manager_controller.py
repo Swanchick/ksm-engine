@@ -9,3 +9,7 @@ class InstanceManagerController(ABC):
     @abstractmethod
     def unpin_port_from_instance(self, port: int):
         pass
+
+    @property
+    def instances(self):
+        return

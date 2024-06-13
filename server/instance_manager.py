@@ -8,23 +8,27 @@ from .instance_loader import InstanceLoader, LoadState
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 from server.controllers.instance_manager_controller import InstanceManagerController
+from api import Api
 
 
-KSM_DATABASE = "ksm_database"
-
-
-class InstanceManager(Database, InstanceManagerController):
+class InstanceManager(Api, Database, InstanceManagerController):
     __instances: List[ServerInstance]
     __permission_manager: PermissionManager
     __instance_folder: str
     __instance_api: InstanceApiController
     __docker_client: DockerClient
 
-    def __init__(self, instance_api: InstanceApiController, *args, **kwargs):
+    def __init__(self, instance_folder: str, permission_manager: PermissionManager, instance_api: InstanceApiController, *args, **kwargs):
+        self.__instances = []
+
+        self.__instance_folder = instance_folder
+        self.__permission_manager = permission_manager
         self.__instance_api = instance_api
         self.__docker_client = from_env()
 
         super().__init__(*args, **kwargs)
+
+        self.start()
 
     def __load_instance(
             self,
@@ -62,8 +66,6 @@ class InstanceManager(Database, InstanceManagerController):
                 return instance
 
     def start(self):
-        self.__instances = []
-
         self._execute(
             "CREATE TABLE IF NOT EXISTS instances ("
             "instance_id INT PRIMARY KEY AUTO_INCREMENT, "
@@ -110,14 +112,15 @@ class InstanceManager(Database, InstanceManagerController):
         instance_id = self._cursor.fetchone()[0]
         instance_folder = self.__generate_folder(name)
 
-        self.__load_instance(instance_id, name, instance_docker_image, instance_cmd, instance_folder)
+        self.__load_instance(instance_id, name, "", instance_folder)
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Instance created!").build()
 
     def __port_exists(self, port: int) -> bool:
-        self._execute("SELECT COUNT(*) FROM ports WHERE port = %s",
-                      (port,)
-                      )
+        self._execute(
+            "SELECT COUNT(*) FROM ports WHERE port = %s",
+            (port,)
+        )
 
         result = self._fetchone()
 
@@ -208,12 +211,6 @@ class InstanceManager(Database, InstanceManagerController):
         result = self._fetchone()
 
         return result[0]
-
-    def load_folder(self, instance_folder: str):
-        self.__instance_folder = instance_folder
-
-    def load_permission_manager(self, permission_manager: PermissionManager):
-        self.__permission_manager = permission_manager
 
     def load_instances(self):
         self._execute("SELECT * FROM instances")

@@ -1,6 +1,8 @@
 from .base_caller import BaseCaller
 from .base_api import BaseApi
 from typing import Dict, List, Optional
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
 
 
 class ApiCaller(BaseCaller):
@@ -23,11 +25,11 @@ class ApiCaller(BaseCaller):
 
     def request(self, routes: List[str], *args, **kwargs) -> Optional[Dict]:
         if len(routes) <= 1:
-            return
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Not found!").build()
 
         name = routes[0]
         if name not in self.__api:
-            return
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Not found!").build()
 
         api = self.__api[name]
 

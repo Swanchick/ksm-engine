@@ -13,5 +13,5 @@ class BaseCaller(BaseApi):
         pass
 
     @abstractmethod
-    def request(self, routes: List[str], api_name: str = None, *args, **kwargs):
+    def request(self, routes: List[str], *args, api_name: str = None, **kwargs):
         pass
