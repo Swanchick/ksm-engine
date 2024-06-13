@@ -38,6 +38,7 @@ class InstanceManager(Api, Database, InstanceManagerController):
             instance_folder: str
     ) -> Optional[ServerInstance]:
         instance_arguments = self.__instance_api.instance_arguments.get_arguments(instance_id)
+        print(instance_arguments)
 
         port = self.get_port(instance_id)
 

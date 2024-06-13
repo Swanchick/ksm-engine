@@ -58,6 +58,7 @@ class ServerInstance:
         self.__name = instance_name
         self.__docker_image = instance_docker_image
         self.__arguments = instance_arguments
+
         self.__folder = instance_folder
         self.__output = []
         self.__server_state = ServerState.STOP
@@ -87,6 +88,8 @@ class ServerInstance:
 
     @InstanceCaller.register("start", permission=Permissions.INSTANCE_START_STOP)
     def start(self):
+        print(self)
+
         if not self.__arguments:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_NOT_FOUND.value)

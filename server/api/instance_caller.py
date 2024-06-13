@@ -61,7 +61,7 @@ class InstanceCaller(BaseCaller):
                     return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
 
                 try:
-                    response = callback.request(self.instance_callbacks, *args)
+                    response = callback.request(instance, *args)
                 except Exception as e:
                     return (ResponseBuilder()
                             .status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value)

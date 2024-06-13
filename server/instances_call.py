@@ -23,8 +23,6 @@ class InstancesCall(Api):
         return
 
     def request(self, routes: List[str], *args, **kwargs) -> Optional[Dict]:
-        print(routes)
-
         data = api_data.get("data")
         if data is None:
             return
@@ -33,12 +31,12 @@ class InstancesCall(Api):
         if instance_id is None:
             return
 
-        print(instance_id)
         instance = self.__get_instance(instance_id)
 
-        print(self.__instance_manager.instances)
         if instance is None:
             return
+
+        print(instance)
 
         response = self._caller.request(routes, instance=instance, *args)
 
