@@ -14,6 +14,7 @@ from docker.models.containers import Container
 from .docker_console import DockerConsole
 from .controllers.instance_manager_controller import InstanceManagerController
 from .api.instance_caller import InstanceCaller
+from .instance_arguments import InstanceArguments
 
 MAX_OUTPUT_MESSAGES = 100
 
@@ -21,13 +22,14 @@ MAX_OUTPUT_MESSAGES = 100
 class ServerInstance:
     __docker_client: DockerClient
     __instance_manager: InstanceManagerController
+    __permission_manager: PermissionManager
 
     __instance_id: int
     __name: str
     __folder: str
     __docker_image: str
     __port: int
-    __arguments: List[str]
+    __instance_arguments: InstanceArguments
 
     __container: Container
     __docker_console: DockerConsole
@@ -45,7 +47,7 @@ class ServerInstance:
             instance_id: int,
             instance_name: str,
             instance_docker_image: str,
-            instance_arguments: List[str],
+            instance_arguments: InstanceArguments,
             instance_folder: str,
             port: int
     ):
@@ -57,7 +59,7 @@ class ServerInstance:
         self.__instance_id = instance_id
         self.__name = instance_name
         self.__docker_image = instance_docker_image
-        self.__arguments = instance_arguments
+        self.__instance_arguments = instance_arguments
 
         self.__folder = instance_folder
         self.__output = []
@@ -82,15 +84,19 @@ class ServerInstance:
 
         self.stop()
 
+    @InstanceCaller.register("get", permission=Permissions.INSTANCE_VIEW)
+    def get(self):
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instance", self.dict).build()
+
     @InstanceCaller.register("test", permission=Permissions.INSTANCE_VIEW)
     def test(self):
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("It works!").build()
 
     @InstanceCaller.register("start", permission=Permissions.INSTANCE_START_STOP)
     def start(self):
-        print(self)
+        arguments = self.__instance_arguments.get_arguments(self.__instance_id)
 
-        if not self.__arguments:
+        if not arguments:
             return (ResponseBuilder()
                     .status(HttpStatus.HTTP_NOT_FOUND.value)
                     .message("Arguments not set!")
@@ -108,7 +114,7 @@ class ServerInstance:
                     .message("Server is already started")
                     .build())
 
-        command = ["/bin/bash", "-c", " ".join(self.__arguments)]
+        command = ["/bin/bash", "-c", " ".join(arguments)]
 
         self.__container = self.__docker_client.containers.run(
             image=self.__docker_image,
@@ -300,10 +306,7 @@ class ServerInstance:
 
     @InstanceCaller.register("get_permissions", permission=Permissions.INSTANCE_PERMISSION_EDIT)
     def get_permission(self) -> Dict:
-        try:
-            permissions = self._permission_manager.get_all_permissions_from_instance(self.__instance_id)
-        except Exception:
-            raise Exception("There is a problem getting permissions!")
+        permissions = self.__permission_manager.get_all_permissions_from_instance(self.__instance_id)
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)
@@ -313,7 +316,7 @@ class ServerInstance:
     @InstanceCaller.register("add_permission", permission=Permissions.INSTANCE_PERMISSION_EDIT)
     def add_permission(self, user_id: int, permission_type: int) -> Dict:
         try:
-            self._permission_manager.add_permission(user_id, self.__instance_id, permission_type)
+            self.__permission_manager.add_permission(user_id, self.__instance_id, permission_type)
         except Exception:
             raise Exception("There is a problem adding permission!")
 
@@ -353,6 +356,24 @@ class ServerInstance:
         self.__port = 0
 
         return result
+
+    @InstanceCaller.register("get_arguments", permission=Permissions.INSTANCE_ARGUMENTS)
+    def get_arguments(self) -> Dict:
+        arguments = self.__instance_arguments.get_arguments(self.__instance_id)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("arguments", arguments).build()
+
+    @InstanceCaller.register("add_argument", permission=Permissions.INSTANCE_ARGUMENTS)
+    def add_argument(self, argument: str) -> Dict:
+        response = self.__instance_arguments.add_argument(self.__instance_id, argument)
+
+        return response
+
+    @InstanceCaller.register("remove_argument", permission=Permissions.INSTANCE_ARGUMENTS)
+    def remove_argument(self, argument_id: int) -> Dict:
+        response = self.__instance_arguments.remove_argument(self.__instance_id, argument_id)
+
+        return response
 
     @property
     def instance_state(self) -> ServerState:

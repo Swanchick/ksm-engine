@@ -56,6 +56,9 @@ class CallbackCaller(BaseCaller):
         if callback is None:
             return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Not found!").build()
 
-        response = callback.request(api, *args, **kwargs)
-
-        return response
+        try:
+            response = callback.request(api, *args, **kwargs)
+        except Exception as e:
+            return ResponseBuilder().status(HttpStatus.HTTP_INTERNAL_SERVER_ERROR.value).message(str(e)).build()
+        else:
+            return response

@@ -1,5 +1,4 @@
 from server.instance_api import InstanceApi
-from server.permission.permissions import Permissions
 from user.user_manager import UserManager
 from user.user import User
 from .settings_engine import EngineSettings
@@ -36,13 +35,15 @@ class Engine(Api):
 
     def encrypt_data(self, data: Dict) -> str:
         if self.__debug:
-            return dumps(data)
+            json = dumps(data)
+
+            return json
 
         json = dumps(data)
         encrypted_json = self.__cryptography.encrypt(json.encode())
         bs64 = b64encode(encrypted_json)
 
-        return bs64.decode()
+        return bs64.decode("utf-8")
 
     def decrypt_data(self, data: Dict) -> Dict:
         if self.__debug:
@@ -105,7 +106,7 @@ class Engine(Api):
 
         response = self._caller.request(routes, api_name=api_name)
         if response is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).build()
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Not found!").build()
 
         return response
 

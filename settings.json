@@ -6,7 +6,7 @@
         "server_instances_folder": "E:/ksm/ksm-instances/",
         "password": "12345678",
         "secret_key": "UXCnaUui8h64bYKBl_kVQDExKNHA9FVi4r4Swe7T3Xw=",
-        "debug": true
+        "debug": false
     },
     "database": {
         "ip": "127.0.0.1",

@@ -3,6 +3,8 @@ from api import Api, api_data
 from .api.instance_caller import InstanceCaller
 from .instance import ServerInstance
 from .controllers.instance_manager_controller import InstanceManagerController
+from utils.response_builder import ResponseBuilder
+from utils.http_status import HttpStatus
 
 
 class InstancesCall(Api):
@@ -23,20 +25,22 @@ class InstancesCall(Api):
         return
 
     def request(self, routes: List[str], *args, **kwargs) -> Optional[Dict]:
+        user = api_data.get("user")
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
         data = api_data.get("data")
         if data is None:
-            return
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad Request!").build()
 
         instance_id = data.get("instance_id")
         if instance_id is None:
-            return
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad Request!").build()
 
         instance = self.__get_instance(instance_id)
 
         if instance is None:
-            return
-
-        print(instance)
+            return ResponseBuilder().status(HttpStatus.HTTP_NOT_FOUND.value).message("Instance not found!").build()
 
         response = self._caller.request(routes, instance=instance, *args)
 

@@ -30,7 +30,6 @@ class InstanceApi(Api, InstanceApiController):
         self._caller.register("call", self.__instances_call)
 
         self.__instance_arguments = InstanceArguments()
-        self._caller.register("arguments", self.__instance_arguments)
 
         self.__instance_manager.load_instances()
 

@@ -5,17 +5,11 @@ from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 
 
-class InstanceArguments(Api, Database):
+class InstanceArguments(Database):
     def __init__(self):
         super().__init__()
 
-        self._caller = CallbackCaller(self, "instance_arguments")
         self.start()
-
-    def request(self, routes: List[str], *args, **kwargs) -> Optional[Dict]:
-        response = self._caller.request(routes, api_name="instance_arguments")
-
-        return response
 
     def start(self):
         self._execute(
@@ -27,15 +21,7 @@ class InstanceArguments(Api, Database):
             ")"
         )
 
-    @CallbackCaller.register("add", "instance_arguments")
-    def add_argument(self):
-        data = api_data.get("data")
-        if data is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
-
-        instance_id = data.get("instance_id")
-        argument = data.get("argument")
-
+    def add_argument(self, instance_id: int, argument: str):
         if instance_id is None and argument is None:
             return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
 
@@ -51,15 +37,7 @@ class InstanceArguments(Api, Database):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Arguments added!").build()
 
-    @CallbackCaller.register("remove", "instance_arguments")
-    def remove_argument(self):
-        data = api_data.get("data")
-        if data is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
-
-        instance_id = data.get("instance_id")
-        argument_id = data.get("argument_id")
-
+    def remove_argument(self, instance_id: int, argument_id: int):
         self._execute(
             "DELETE FROM instance_arguments "
             "WHERE instance_id = %s AND argument_id = %s",
@@ -84,7 +62,6 @@ class InstanceArguments(Api, Database):
 
         return arguments
 
-    @CallbackCaller.register("get", "instance_arguments")
     def get_arguments_request(self):
         data = api_data.get("data")
         if data is None:

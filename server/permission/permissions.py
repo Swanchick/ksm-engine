@@ -13,4 +13,5 @@ class Permissions(Enum):
     FILES_REMOVE = 256
     FILES_DOWNLOAD = 512
     INSTANCE_PORT = 1024
+    INSTANCE_ARGUMENTS = 2048
     
