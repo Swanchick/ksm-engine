@@ -10,6 +10,7 @@ from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 from server.controllers.instance_manager_controller import InstanceManagerController
 from api import Api, CallbackCaller, api_data
+from user.user import User
 
 
 class InstanceManager(Api, Database, InstanceManagerController):
@@ -153,7 +154,16 @@ class InstanceManager(Api, Database, InstanceManagerController):
     def get_instances(self) -> Dict:
         instances = []
 
+        user: User = api_data.get("user")
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").buid()
+
         for instance in self.__instances:
+            instance_id = instance.instance_id
+
+            if not self.__permission_manager.check_permission(user, instance_id, Permissions.INSTANCE_VIEW):
+                continue
+
             instances.append(instance.dict)
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("instances", instances).build()

@@ -236,8 +236,8 @@ class ServerInstance:
     def delete_folder(self, *folders) -> Dict:
         try:
             self.__folder_system.delete_folder(*folders)
-        except Exception:
-            raise Exception("There is a problem deleting folder!")
+        except Exception as e:
+            raise e
 
         return (ResponseBuilder()
                 .status(HttpStatus.HTTP_SUCCESS.value)

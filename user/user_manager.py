@@ -72,6 +72,15 @@ class UserManager(Api, AbstractUserManager, Database):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("users", users).build()
 
+    @CallbackCaller.register("get", api_name="user")
+    def get_user(self):
+        user = api_data.get("user")
+
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("user", user.dict).build()
+
     @CallbackCaller.register("authenticate_user", api_name="user")
     def authenticate_user(self) -> Optional[List[Dict]]:
         data = api_data.get("data")
