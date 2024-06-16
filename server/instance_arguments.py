@@ -1,6 +1,5 @@
 from typing import List, Optional, Dict
 from database_utils.database import Database
-from api import Api, CallbackCaller, api_data
 from utils.response_builder import ResponseBuilder
 from utils.http_status import HttpStatus
 
@@ -14,9 +13,9 @@ class InstanceArguments(Database):
     def start(self):
         self._execute(
             "CREATE TABLE IF NOT EXISTS instance_arguments("
-            "argument_id INT PRIMARY KEY AUTO_INCREMENT,"
-            "instance_id INT,"
-            "argument CHAR(128) UNIQUE,"
+            "argument_id INT PRIMARY KEY AUTO_INCREMENT, "
+            "instance_id INT, "
+            "argument CHAR(128), "
             "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
             ")"
         )
