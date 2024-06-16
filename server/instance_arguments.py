@@ -50,7 +50,7 @@ class InstanceArguments(Database):
 
     def get_arguments(self, instance_id: int):
         self._execute(
-            "SELECT argument "
+            "SELECT argument, argument_id "
             "FROM instance_arguments "
             "WHERE instance_id = %s",
             (instance_id,)
@@ -58,21 +58,14 @@ class InstanceArguments(Database):
 
         arguments = []
         for argument in self._cursor.fetchall():
-            arguments.append(argument[0])
+            arguments.append({"argument": argument[0], "argument_id": argument[1]})
 
         return arguments
 
-    def get_arguments_request(self):
-        data = api_data.get("data")
-        if data is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+    def get_arguments_list(self, instance_id: int):
+        dict_arguments = self.get_arguments(instance_id)
+        arguments = []
+        for argument in dict_arguments:
+            arguments.append(argument["argument"])
 
-        instance_id = data.get("instance_id")
-        if instance_id is None:
-            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
-
-        arguments = self.get_arguments(instance_id)
-
-        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("arguments", arguments).build()
-
-
+        return arguments

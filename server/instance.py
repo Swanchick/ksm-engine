@@ -94,7 +94,7 @@ class ServerInstance:
 
     @InstanceCaller.register("start", permission=Permissions.INSTANCE_START_STOP)
     def start(self):
-        arguments = self.__instance_arguments.get_arguments(self.__instance_id)
+        arguments = self.__instance_arguments.get_arguments_list(self.__instance_id)
 
         if not arguments:
             return (ResponseBuilder()
@@ -333,7 +333,8 @@ class ServerInstance:
 
     @InstanceCaller.register("pin_port", permission=Permissions.INSTANCE_PORT)
     def pin_port(self, port: int) -> Dict:
-        result = self.__instance_manager.pin_port_to_instance(self.__instance_id, port)
+        result = self.__instance_manager.pin_port_to_instance(self.__instance_id, port, self.__port)
+
         if result["status"] != HttpStatus.HTTP_SUCCESS.value:
             return result
 
@@ -356,6 +357,10 @@ class ServerInstance:
         self.__port = 0
 
         return result
+
+    @InstanceCaller.register("get_port", permission=Permissions.INSTANCE_PORT)
+    def get_port(self) -> Dict:
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("port", self.port).build()
 
     @InstanceCaller.register("get_arguments", permission=Permissions.INSTANCE_ARGUMENTS)
     def get_arguments(self) -> Dict:
@@ -397,10 +402,9 @@ class ServerInstance:
             "instance_name": self.__name,
             "instance_id": self.__instance_id,
             "instance_state": self.__server_state.value,
-            "port": self.__port
-
+            "port": self.port
         }
 
     @property
     def port(self):
-        return self.__port
+        return self.__port if self.__port != 0 else None

@@ -191,6 +191,30 @@ class InstanceManager(Api, Database, InstanceManagerController):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Port created!").build()
 
+    @CallbackCaller.register("unpin_port", api_name="instance_manager")
+    def unpin_port(self) -> Dict:
+        user: User = api_data.get("user")
+        if user is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        if not user.is_administrator:
+            return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
+
+        data = api_data.get("data")
+        if data is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
+        port = data.get("port")
+        if port is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
+        if not self.__port_exists(port):
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Port doesn't exist!").build()
+
+        self.unpin_port_from_instance(port)
+
+        return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("Port deleted!").build()
+
     @CallbackCaller.register("delete_port", api_name="instance_manager")
     def delete_port(self) -> Dict:
         data = api_data.get("data")
@@ -224,9 +248,11 @@ class InstanceManager(Api, Database, InstanceManagerController):
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).addition_data("ports", out).build()
 
-    def pin_port_to_instance(self, instance_id: int, port: int) -> Dict:
+    def pin_port_to_instance(self, instance_id: int, port: int, current_port: int) -> Dict:
         if not self.__port_exists(port):
             return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Port does not exist!").build()
+
+        self.unpin_port_from_instance(current_port)
 
         self._execute(
             "UPDATE ports "

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class InstanceManagerController(ABC):
     @abstractmethod
-    def pin_port_to_instance(self, port: int, instance_id: int):
+    def pin_port_to_instance(self, instance_id: int, port: int, current_port: int):
         pass
 
     @abstractmethod
