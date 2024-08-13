@@ -38,8 +38,17 @@ class UserManager(Api, AbstractUserManager, Database):
 
         return response
 
+    def create_user_internal(self, name: str, password: str, administrator: bool):
+        new_user = User(name, password, administrator)
+
+        self._execute(
+            "INSERT INTO users (name, password, administrator) VALUES (%s, %s, %s)",
+            (new_user.name, new_user.password, new_user.is_administrator)
+        )
+        self._commit()
+
     @CallbackCaller.register("create_user", api_name="user")
-    def create_user(self, name: str, password: str, administrator: bool):
+    def create_user(self):
         user = api_data.get("user")
         if user is None:
             return ResponseBuilder().status(HttpStatus.HTTP_FORBIDDEN.value).message("Forbidden!").build()
@@ -50,13 +59,23 @@ class UserManager(Api, AbstractUserManager, Database):
                     .message("You cannot create new users!")
                     .build())
 
-        new_user = User(name, password, administrator)
+        data = api_data.get("data")
+        if data is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
 
-        self._execute(
-            "INSERT INTO users (name, password, administrator) VALUES (%s, %s, %s)",
-            (new_user.name, new_user.password, new_user.is_administrator)
-        )
-        self._commit()
+        name = data.get("name")
+        if name is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
+        password = data.get("password")
+        if password is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
+        administrator = data.get("administrator")
+        if administrator is None:
+            return ResponseBuilder().status(HttpStatus.HTTP_BAD_REQUEST.value).message("Bad request!").build()
+
+        self.create_user_internal(name, password, administrator)
 
         return ResponseBuilder().status(HttpStatus.HTTP_SUCCESS.value).message("User has been created!").build()
 

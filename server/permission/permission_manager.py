@@ -20,9 +20,7 @@ class PermissionManager(Database):
             "CREATE TABLE IF NOT EXISTS permissions ("
             "user_id INTEGER,"
             "instance_id INTEGER,"
-            "permission INTEGER DEFAULT 0,"
-            "FOREIGN KEY (user_id) REFERENCES users(user_id),"
-            "FOREIGN KEY (instance_id) REFERENCES instances(instance_id)"
+            "permission INTEGER DEFAULT 0"
             ")"
         )
 

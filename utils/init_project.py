@@ -18,7 +18,7 @@ class InitProject:
         administrator_str = input("Administrator (y/n) by default (n): ")
         administrator = True if administrator_str == "y" else False
 
-        user = self.__user_manager.create_user(username, password, administrator)
+        user = self.__user_manager.create_user_internal(username, password, administrator)
         if user is None:
             print("Something went wrong!")
 

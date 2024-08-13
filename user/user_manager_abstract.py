@@ -5,7 +5,7 @@ from .user import User
 
 class AbstractUserManager(ABC):
     @abstractmethod
-    def create_user(self, name: str, password: str, administrator: bool):
+    def create_user_internal(self, name: str, password: str, administrator: bool):
         pass
 
     @abstractmethod
